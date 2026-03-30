@@ -23,7 +23,7 @@ Your backend needs to be deployed to handle API requests from the frontend. Choo
    - **Name:** `pfe-seller-backend`
    - **Region:** Frankfurt (eu-central-1) - closest to your Supabase
    - **Runtime:** Python 3.9+
-   - **Root Directory:** `/` (leave as root - repo root)
+   - **Root Directory:** `backend_django/backend_seller_platform`
    - **Build Command:** 
      ```
      bash render-build.sh
