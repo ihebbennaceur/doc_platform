@@ -1,0 +1,54 @@
+@startuml DocCheck_Sequence
+title DocCheck Module - Assessment Flow Sequence
+
+actor Seller
+participant Frontend
+participant DocCheckAPI
+participant Database
+participant NotificationService
+
+Seller -> Frontend: Access /verificar (DocCheck tool)
+Frontend -> Frontend: Load assessment form
+Frontend -> Seller: Display Question 1
+
+loop For Each of 8 Questions
+  Seller -> Frontend: Answer question
+  Frontend -> Frontend: Update local state
+  Frontend -> Seller: Display next question
+end
+
+Seller -> Frontend: Complete all 8 answers
+Frontend -> Frontend: Show email capture form
+Seller -> Frontend: Enter email address
+Frontend -> DocCheckAPI: POST /doccheck/evaluate {answers}
+
+DocCheckAPI -> DocCheckAPI: Evaluate document matrix
+DocCheckAPI -> DocCheckAPI: Determine service tier
+DocCheckAPI -> DocCheckAPI: Calculate price & timeline
+DocCheckAPI -> DocCheckAPI: Identify risk flags
+
+DocCheckAPI --> Frontend: Return DocCheckResult
+Frontend -> Database: Save DocCheckSession
+Database --> Frontend: Session saved
+
+Frontend -> Seller: Display result page
+Seller -> Seller: Review documents & tier recommendation
+
+alt Convert to Order
+  Seller -> Frontend: Click "Encomendar"
+  Frontend -> Database: Update session.converted = true
+  Database --> Frontend: Confirmation
+  Frontend -> Seller: Redirect to /encomendar
+else No Conversion
+  Seller -> Frontend: Close assessment
+  Frontend -> NotificationService: Send follow-up email
+  NotificationService --> Seller: Email sent (24h later)
+end
+
+note right of DocCheckAPI
+  Decision tree evaluation
+  Conditional document logic
+  Price calculation with discounts
+end note
+
+@enduml

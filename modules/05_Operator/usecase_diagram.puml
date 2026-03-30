@@ -1,0 +1,58 @@
+@startuml Operator_UseCase
+title Operator Module - Use Case Diagram
+
+left to right direction
+
+actor Operator as O
+actor System as SYS
+
+rectangle "Operator Dashboard" {
+  usecase "View Order Queue" as UC1
+  usecase "Filter & Sort Orders" as UC2
+  usecase "View Order Details" as UC3
+  usecase "Update Document Status" as UC4
+  usecase "Request Seller Action" as UC5
+  usecase "Flag Blocked Order" as UC6
+  usecase "Coordinate with Suppliers" as UC7
+  usecase "Add Internal Notes" as UC8
+  usecase "Mark Order Complete" as UC9
+  usecase "Monitor Task Queue" as UC10
+  usecase "View Comms Log" as UC11
+  usecase "Assign Suppliers" as UC12
+}
+
+O --> UC1
+UC1 --> UC2
+UC1 --> UC3
+UC3 --> UC4
+UC3 --> UC5
+UC3 --> UC6
+UC3 --> UC7
+UC3 --> UC8
+UC3 --> UC11
+UC3 --> UC12
+UC4 --> UC9
+
+O --> UC10
+
+SYS --> UC1
+SYS --> UC2
+
+note right of UC3
+  Property details
+  Seller info
+  Document checklist
+end note
+
+note right of UC6
+  Reason + estimated
+  resolution date
+end note
+
+note right of UC11
+  All notifications
+  Manual messages
+  Seller responses
+end note
+
+@enduml

@@ -1,0 +1,320 @@
+FIZBO.PT · Product Requirements Document
+FIZBO.PT
+Product Requirements Document
+Features, user flows, business logic & acceptance criteria
+PRD — For Product Team & Senior Developer
+v1.0 · March 2026 · Confidential — FAIRBANK Group
+FIZBO.PT · Product Requirements Document
+1. Product Vision & Scope
+Fizbo is Portugal's first seller preparation platform. It solves the single biggest reason
+private property sales fail: the seller arrives unprepared — missing documents, no credible
+price, and no qualified buyer pool.
+Fizbo does not replace agents. It replaces the chaos that precedes a sale. A Fizbo-prepared
+seller has complete documentation, a data-backed price, a professional listing, and access to a
+verified off-market buyer pool — before they speak to any agent or post any public listing.
+Mission: Make every Portuguese property seller as prepared as a professional agent —
+through technology, data, and guided processes that eliminate information asymmetry and
+reduce transaction failure.
+1.1 What Fizbo Is and Is Not
+Fizbo IS Fizbo is NOT
+A document preparation and concierge service A real estate agency or agent replacement
+A data-backed price intelligence tool A public property listings portal
+An off-market buyer introduction service
+(AMI-licensed)
+A mortgage broker or financial advisor
+A professional listing preparation tool A legal services provider
+A gateway to vetted professionals (peritos,
+solicitadores)
+A post-sale document vault
+⚠️ Note: AMI number must appear in the footer of every Fizbo.pt page — legal
+requirement under Lei 15/2013.
+FIZBO.PT · Product Requirements Document
+2. Users & Stakeholders
+2.1 Five Seller Personas
+Persona Profile Primary need Service tier
+P1: Urban
+Resident
+PT resident, city
+apartment, mortgage
+Speed + simplicity DocComplete Standard — €399
+P2:
+Non-Resident
+British/Dutch/other,
+villa, abroad
+Remote handling, fiscal
+rep
+DocComplete Premium — €899
+P3: Heir /
+Inherited
+Multiple heirs,
+possibly abroad
+Legal coordination,
+complexity
+DocComplete Premium —
+€1,299
+P4: Divorce /
+Urgent
+Joint ownership,
+time-sensitive
+Speed, both parties
+coordinated
+DocExpress — €1,499
+P5: Rural /
+Legacy
+Quinta, missing LU,
+elderly seller
+Expert guidance,
+realistic timelines
+Custom quote
+2.2 The Operator (Internal User)
+The Fizbo operator manages all document procurement tasks that cannot be automated. They
+need a queue-based dashboard.
+• Reviews incoming orders and confirms document requirements
+• Contacts municipal offices, banks, condominium administrators on behalf of seller
+• Coordinates perito qualificado appointments for energy certification
+• Updates document statuses (triggers automated seller notifications)
+• Handles exceptions: blocked orders, missing heirs, unresponsive municipalities
+FIZBO.PT · Product Requirements Document
+3. Feature Set
+Core MVP (Phase 1): DocCheck tool → DocReady orders → Seller dashboard →
+SmartCMA report. Everything else is Phase 2.
+Feature Phase Priority Description
+DocCheck Tool 1 P0 — must ship Free assessment: which documents
+are missing or expiring
+DocReady Order Flow 1 P0 — must ship Stripe payment → Inngest workflow
+→ seller status dashboard
+Document Upload + OCR 1 P0 — must ship Seller uploads caderneta; OCR
+extracts fields automatically
+Seller Dashboard 1 P0 — must ship Document tracker with live status,
+notifications, SmartCMA access
+Operator Dashboard 1 P0 — must ship Order queue, status management,
+supplier coordination, comms log
+SmartCMA Report 1 P1 — high value Price band, comparables,
+days-on-market, BuyerHeat signal,
+PDF export
+Email + WhatsApp
+Notifications
+1 P1 Document status updates, expiry
+alerts, order completion
+Listing Manager 2 P2 Photos, AI-generated description
+(PT-PT), off-market toggle
+Buyer Inbox 2 P2 Reserva-integrated: buyer contact
+requests, approval, offer pipeline
+InspectOS CTA 2 P2 Triggered from DocCheck risk
+signals — links to InspectOS booking
+3.1 DocCheck Tool — Input Questions
+8 questions, branching logic, completing in under 90 seconds. Email required to view full result.
+1. What type of property? (Apartamento / Moradia / Terreno / Outro)
+2. Is the property in a condominium? (Yes / No / Unsure)
+3. When was the building constructed? (Pre-1951 / 1951–1990 / 1991–2007 / Post-2007)
+4. Do you have a mortgage on the property? (Yes / No)
+FIZBO.PT · Product Requirements Document
+5. How did you acquire it? (Purchase / Inheritance / Divorce settlement / Gift / Other)
+6. Is this your primary residence? (Yes / No — rented / No — vacant)
+7. Do you have a valid energy certificate under 10 years old? (Yes / No / Don't know)
+8. Are all owners available to sign? (Yes / One abroad / One deceased / Disputed)
+3.2 DocCheck Output: Document Matrix
+ALWAYS REQUIRED (all properties):
+ Caderneta Predial Urbana — check validity < 12 months
+ Certidão Permanente — check validity < 6 months
+CONDITIONAL (based on answers):
+ Licença de Utilização — if post-1951 building [Q3]
+ Ficha Técnica de Habitação — if post-2004 construction [Q3]
+ Certificado Energético — if Q7 = No or Don't know
+ Declaração do Condomínio — if Q2 = Yes
+ Distrate de Hipoteca — if Q4 = Yes
+ Habilitação de Herdeiros — if Q5 = Inheritance AND Q8 ≠ Yes
+SERVICE TIER RECOMMENDATION:
+ All docs present + valid → SmartCMA CTA only (no purchase needed)
+ 1–2 missing documents → DocComplete Standard (€399)
+ 3+ missing OR complex case → DocComplete Premium (€899)
+ Urgent / divorce / deadline → DocExpress (€1,499)
+ Rural / missing LU / quinta → Custom quote form
+RISK FLAGS (displayed to seller):
+ Property age > 30 years → recommend Simplex Safe inspection
+ Energy class F or G → recommend Energy Full inspection
+ Inherited + disputed → recommend legal review
+3.3 DocReady Service Tiers
+Standard — €399 Premium — €899 DocExpress — €1,499
+Target P1: Urban resident,
+simple case
+P2/P3: Non-resident,
+inherited
+P4: Divorce, hard deadline
+Documents All 6 standard docs Standard + CPCV legal
+review + tax consult
+All docs, parallel
+processing, rush channels
+Timeline 15–20 working days 20–30 working days Work starts in 48h, 10
+days to complete
+Gross margin 32–40% 30–45% 25–45%
+FIZBO.PT · Product Requirements Document
+⚠️ Note: If seller already has a valid energy certificate (Q7 = Yes), display -€100
+deduction on Standard tier automatically. This significantly increases conversion by showing
+the price is personalised.
+3.4 SmartCMA Report Sections
+9. Price band: low / mid / high with confidence score and methodology note
+10. 3–5 comparable transactions: anonymised, same typology + parish, last 12 months
+11. Reality Gap: municipal asking-to-transaction discount ("In Cascais, sellers accept ~6%
+below asking")
+12. Days-on-market prediction: at 3 price points (below / at / above median)
+13. BuyerHeat: "X verified buyers on our platform match your property profile" (rounded to 5)
+14. Energy class premium/discount: how energy cert affects value vs comparables
+15. CTA: "Activate your 30-day off-market test on Reserva"
+• Never show a single price — always show a band
+• Frame price relative to time ("at this price, expect 6–8 weeks to sale")
+• PDF export required — React PDF, server-side rendered
+FIZBO.PT · Product Requirements Document
+4. User Flows
+4.1 Standard Seller Flow (P1)
+1. Arrives on fizbo.pt (organic / referral / PropCheck CTA)
+2. Homepage → "Check my documents" CTA
+3. Runs DocCheck — 8 questions, unauthenticated
+ Email capture required to see full result
+4. Sees: document gap report + recommended tier + price
+5. Clicks "Get my documents sorted" → tier selection → Stripe Checkout
+6. Stripe success → account created automatically → property onboarding
+7. Uploads caderneta predial (PDF or photo)
+ OCR extracts: artigo matricial, address, typology, VPT
+ Property record created in property_intelligence.properties
+ Inngest DocReady workflow triggered
+8. Document collection phase (15–20 working days)
+ Seller dashboard: live document checklist with statuses
+ Notifications: Email + WhatsApp on each status change
+ Operator: processes queue, contacts suppliers, updates statuses
+9. "Your documents are ready" notification sent
+ All documents downloadable from dashboard
+10. SmartCMA CTA displayed → price report generated on click
+11. "Activate your off-market listing on Reserva" CTA
+4.2 Non-Resident Additions (P2)
+• After DocCheck result: "Are you resident in Portugal?" → if No: fiscal rep options shown
+• Procuração requirement explained with template download link
+• Mais-valias calculation included and shown at onboarding
+• All comms available in English (language set at account creation)
+• Casa Pronta videoconference option surfaced for remote escritura
+4.3 Inherited Property Flow (P3)
+• DocCheck identifies via Q5 (Inheritance) + Q8 (not all owners available)
+• Habilitação de Herdeiros is shown as step zero — prerequisite for all other docs
+• If heir abroad: Apostille requirement explained with timeline (2–4 weeks)
+• Timeline gating: other documents marked "Waiting on Habilitação" until step zero
+complete
+• 10% stamp tax shown for non-exempt heirs (siblings, friends, etc.)
+4.4 Operator Workflow
+OPERATOR DASHBOARD at /admin/operator
+Queue view:
+FIZBO.PT · Product Requirements Document
+ Columns: Order ID | Seller | Property | Tier | Status | Days open | Urgency flag
+ Filters: All / Active / Blocked / Awaiting seller action / Complete
+Order detail view:
+ Property details (from caderneta OCR)
+ Document checklist with individual statuses
+ Assigned suppliers (perito name + booking date, solicitador)
+ Full comms log with seller
+Actions:
+ Update document status (Missing → Requested → Pending → Complete)
+ Flag as blocked (reason + estimated resolution date → seller notified)
+ Request seller action (type: upload NIF / sign procuração / etc.)
+ Add internal note (not visible to seller)
+ Mark order complete (triggers DocReady report + SmartCMA CTA)
+FIZBO.PT · Product Requirements Document
+5. Business Rules & Acceptance Criteria
+5.1 Document Validity Rules
+Document Validity Obtainable by Cost range
+Caderneta Predial Urbana 12 months Owner only €0 online / €1 in-person
+Certidão Permanente 6 months Anyone €15 online / €20 in-person
+Licença de Utilização No expiry Procuração
+simples
+€6–€60 (varies by Câmara)
+Certificado Energético 10 years Perito
+Qualificado
+(ADENE)
+€150–€300 all-in
+Declaração do
+Condomínio
+~30 days No authorisation
+needed
+€0–€50
+Distrate de Hipoteca At escritura Seller + bank €0 bank + €50 registration
+Habilitação de Herdeiros Permanent Procuração com
+poderes
+especiais
+€150–€425 (Balcão das
+Heranças)
+5.2 Pricing & Payment Rules
+• All prices are VAT-exclusive. VAT breakdown shown at Stripe Checkout.
+• If seller confirms valid energy certificate (Q7 = Yes): subtract €100 from displayed price
+automatically — shown as line item at checkout.
+• Refund policy: 100% if no documents requested within 5 working days. 50% if work
+started but no docs obtained. Zero once any document is obtained.
+• DocExpress requires payment confirmation before work begins.
+• Stripe handles all card processing. Zero card data stored on Fizbo servers.
+5.3 Notification Triggers
+ORDER_CREATED → Email: "We have received your order. Here is what
+happens next."
+DOCUMENT_REQUESTED → Email + WhatsApp: "We have requested [document].
+Typical wait: X days."
+DOCUMENT_PENDING → Email: "Your [document] is being processed."
+DOCUMENT_COMPLETE → Email + WhatsApp: "[Document] is ready and verified."
+ORDER_BLOCKED → Email + WhatsApp: "Your order needs your attention:
+[reason]."
+FIZBO.PT · Product Requirements Document
+SELLER_ACTION_REQUIRED → Email + WhatsApp: "[Specific action needed: e.g. sign
+procuração]"
+DOCUMENT_EXPIRING_30_DAYS → Email: "Your [document] expires in 30 days. Renew
+before listing."
+DOCUMENT_EXPIRING_7_DAYS → Email + WhatsApp: "Urgent: [document] expires in 7
+days."
+ORDER_COMPLETE → Email + WhatsApp: "All your documents are ready. Get
+your price report."
+SMARTCMA_READY → Email: "Your SmartCMA report is ready. See your price
+band."
+5.4 Acceptance Criteria
+DocCheck
+• AC1: DocCheck runs unauthenticated. Email required only to view full result.
+• AC2: Maximum 8 questions. Result page loads in < 2 seconds.
+• AC3: Result shows: document checklist, recommended tier + price, timeline estimate,
+CTA.
+• AC4: Result persists for 24 hours in the same browser session.
+• AC5: Email capture creates a lead record even without purchase.
+DocReady Flow
+• AC1: Stripe payment → account creation → property onboarding completes in < 3
+minutes on mobile.
+• AC2: Caderneta upload → OCR result in < 30 seconds. If OCR fails: manual entry form
+shown automatically.
+• AC3: Document statuses update in real-time (Supabase Realtime). No manual refresh.
+• AC4: WhatsApp notification sent on every status change where phone number is on file.
+• AC5: Operator dashboard shows all active orders without page refresh (Realtime).
+• AC6: SmartCMA PDF generated in < 60 seconds of order completion trigger.
+FIZBO.PT · Product Requirements Document
+6. Non-Functional Requirements
+6.1 Performance
+• Public pages (DocCheck, landing, pricing): < 2.5s LCP on 4G mobile
+• Seller dashboard: < 1s to first meaningful paint
+• OCR processing: < 30 seconds end-to-end
+• SmartCMA generation: < 60 seconds end-to-end
+6.2 Security & GDPR
+• NIF encrypted at application level (pg_crypto) — never stored in plaintext
+• Document files in private Supabase Storage — no public URLs, signed URLs expire in 1
+hour
+• Right-to-deletion endpoint: removes all personal_data records + Storage files
+• Data retention: 5 years for order records (fiscal obligation). Contact data deleted 90 days
+post-completion if no further activity.
+• All data stored in EU (Supabase EU region)
+6.3 Localisation
+• Primary language: PT-PT. All seller-facing content written in PT-PT.
+• English: available via /en URL prefix. Separate URL (not toggle) — required for SEO
+hreflang.
+• Mobile-first: entire seller journey must complete on mobile without friction.
+6.4 Success Metrics — Month 6 Targets
+Metric Target Measurement
+DocCheck completions/month 500+ DocCheck submissions in DB
+DocCheck → order conversion > 8% Orders / email-captured completions
+DocReady orders/month 40+ Stripe successful payments
+Order completion rate > 90% Completed / started orders
+Median completion time < 18 working days Created → completed timestamp delta
+Seller NPS (post-completion) > 50 Post-completion survey
+SmartCMA → Reserva activation > 20% Sellers activating off-market listing
+Monthly revenue €15,000+ Stripe MRR
+FIZBO.PT · Product Requirements Document
+Beta plan: 20 sellers at €299 discounted rate (Weeks 10–12). Goal: validate actual
+operator hours per order, collect NPS, stress-test workflow. Full pricing at public launch.

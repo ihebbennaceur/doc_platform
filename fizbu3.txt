@@ -1,0 +1,450 @@
+ 
+FIZBO.PT
+Operations Manual
+DocReady workflow, document procurement, suppliers & unit economics
+Operations Manual — For Operator & Founder
+v1.0  ·  March 2026  ·  Confidential — FAIRBANK Group
+
+1. Operations Overview
+The Fizbo operator is the product. Until automation is sufficient to handle edge cases (which it never fully will be in Portuguese property bureaucracy), the operator's judgement, persistence, and supplier relationships determine whether a DocReady order completes on time.
+ 
+This manual documents every procedure an operator needs to know: how to process each document type, who to call, what to say, what to do when things go wrong, and how to manage the five seller personas.
+ 
+Operator mandate:  Every seller should feel that someone is actively handling their paperwork. Proactive communication — even to report "we are waiting" — is as important as the documents themselves.
+
+ 
+1.1  Operator Daily Routine
+08:30 — Open operator dashboard. Review queue sorted by urgency.
+08:45 — Process any new orders received overnight: review DocCheck answers, confirm document requirements, send ORDER_CREATED comms if not auto-sent.
+09:00 — Follow up on pending government requests (Câmaras, IRN, Finanças) — these require persistence. Phone is more effective than email.
+10:00 — Check perito qualificado confirmations for energy certificate appointments booked.
+11:00 — Update document statuses for any completed items. Each update triggers automatic seller notification.
+Afternoon — Handle incoming seller questions (dashboard comms + phone). Process any uploaded documents from sellers.
+End of day — Flag any blocked orders with reason + estimated resolution. Sellers should never go 48 hours without an update.
+ 
+
+2. Document Procurement — Step by Step
+2.1  Caderneta Predial Urbana
+Who can obtain: Owner only (requires Portal das Finanças login). Fizbo cannot obtain this on the seller's behalf.
+ 
+Validity: 12 months from issue date.
+ 
+Cost: €0 online, €1 at a Finanças office.
+ 
+Operator action
+At onboarding, the seller uploads their caderneta. OCR processes it automatically.
+If OCR fails or the document is older than 12 months: send seller the guided video link showing how to download from Portal das Finanças.
+For elderly/tech-averse sellers: offer a paid guided screen-share session (€25 flat fee, logged as add-on to order).
+Once valid caderneta received: mark status COMPLETE. Cross-reference artigo matricial with the certidão permanente when that arrives.
+ 
+Key check:  The artigo matricial on the caderneta must match the artigo matricial on the certidão permanente and any other documents. Mismatch = potential problem at escritura.
+
+ 
+2.2  Certidão Permanente do Registo Predial
+Who can obtain: Anyone — no ownership proof required. The operator requests this directly.
+ 
+Validity: 6 months. If the certidão expires before the escritura, a new one must be obtained.
+ 
+Cost: €15 online (predial.oa.pt) / €20 at IRN counter.
+ 
+Operator action
+Request at predial.oa.pt as soon as order is created. Use the artigo matricial from the caderneta.
+Online delivery: minutes to a few hours. Save PDF to Supabase Storage. Mark COMPLETE.
+Check key fields: owner names match seller's ID, no undisclosed encumbrances or hipotecas, area matches caderneta.
+If owner name does not match seller: flag immediately — possible inheritance or title issue. Do not proceed until resolved.
+ 
+2.3  Licença de Utilização
+Who can obtain: Seller (or operator with procuração simples). Requested from the local Câmara Municipal.
+ 
+Validity: No expiry once issued.
+ 
+Cost: €6–€60 depending on Câmara. Processing: up to 15 working days.
+ 
+Post-DL 10/2024: Sellers are no longer legally obliged to present the Licença de Utilização at escritura. However, buyer mortgage lenders may still require it. Always obtain it unless the property is pre-1951 (where exemption applies).
+ 
+Operator action — step by step
+Identify the relevant Câmara (308 municipalities — use the municipality from the caderneta).
+Check the Câmara's website for the specific request form. Many are now online; some require in-person submission.
+Submit the request using the procuração simples template (see Appendix A). Include the artigo matricial.
+Log the request reference number and expected timeline in the operator notes.
+Follow up by phone every 5 working days if no response.
+On receipt: save to Storage, mark COMPLETE, notify seller.
+ 
+⚠️  Note:  Municipal variation is the biggest source of delays. Some Câmaras respond in 3 days; others take the full 15 working days or longer. Always start this request first, in parallel with other documents.
+
+ 
+2.4  Certificado Energético
+Who can obtain: Perito Qualificado registered with ADENE. The seller must be present or grant access for the on-site visit.
+ 
+Validity: 10 years. Check expiry date at sce.pt using the property address.
+ 
+Cost target: €120–€160 all-in (negotiate volume pricing with perito partners).
+ 
+Operator action
+Check sce.pt first: enter property address to see if a valid certificate already exists. If yes: mark NOT_REQUIRED (seller confirmed via Q7), save the existing certificate PDF, mark COMPLETE.
+If new certificate needed: book through volume partner perito (see Section 4 — Supplier Network). Target 2–4 day turnaround.
+Brief the seller: they must provide access to all rooms, attic, basement. Perito will check insulation, windows, heating systems.
+Certificate issued within 2 business days of inspection. Operator downloads from ADENE portal. Save to Storage, mark COMPLETE.
+ 
+2.5  Declaração do Condomínio
+Who can obtain: Anyone — no formal authorisation required. Request from the condominium administrator (administrador de condomínio).
+ 
+Validity: ~30 days (informal — use date of issue as reference).
+ 
+Legal timeline: Under Lei 8/2022, administrator must respond within 10 working days.
+ 
+Cost: €0–€50. Some administrators charge a fee; this is included in the DocReady cost.
+ 
+Operator action
+Ask seller for the name and contact details of their condominium administrator (first week).
+Send formal request by email with: property address, artigo matricial, requested information (no debt, no outstanding levies, no pending works).
+Follow up by phone at Day 5 if no response. Reference the 10-day legal obligation.
+Request this document last (or in parallel with LU) — it expires quickly.
+ 
+2.6  Distrate de Hipoteca
+Who obtains it: The seller initiates with their bank. The bank delivers the distrate at the escritura.
+ 
+Cost: €0 from bank (Lei 57/2020 prohibits charging). €50 registration fee at escritura. Early repayment commission: 0.5% (variable rate) or 2% (fixed rate).
+ 
+Operator action
+Advise seller to contact their bank mortgage department and request a "declaração de distrate" — tell them a sale is being prepared.
+The bank will provide a draft distrate. Review: confirm it covers the full loan, correct property description.
+The signed distrate is delivered at escritura, not before. Mark status as PENDING until escritura confirmed.
+Remind seller: early repayment commission is separate from the distrate fee and should be calculated before setting the sale price.
+ 
+2.7  Habilitação de Herdeiros
+Who can obtain: Any heir or legal representative with procuração com poderes especiais. Filed at Balcão das Heranças (notary offices or Conservatória do Registo Civil).
+ 
+Timeline: 2–4 weeks minimum. If a heir is abroad: add 2–3 weeks for Apostille.
+ 
+Cost: €150–€425 (Balcão das Heranças). Stamp tax: 10% for non-exempt heirs (siblings, friends, non-family). Exempt: spouse, children, grandchildren, parents.
+ 
+Operator action
+This is always the first document to initiate — it is a prerequisite for everything else in an inherited property.
+Confirm all heirs: collect full names, NIF, nationality, and relationship to deceased.
+If heir abroad: they must provide an Apostille-certified certified copy of their ID + proof of relationship. Estimated 2–3 weeks additional.
+Brief seller on stamp tax exposure before they commit to the sale price.
+Connect with partner solicitador for this process — required for Premium tier.
+ 
+
+3. Persona Service Paths
+P1: Portuguese Resident, Urban Apartment, Mortgage
+Estimated cost to Fizbo: €255–€280. Timeline: 15–20 working days. Automation: ~40%.
+ 
+Day 1:    Order received. Certidão permanente requested (operator, 10 min).
+          LU request submitted to Câmara (operator, 20 min).
+          Energy cert booked with perito (operator, 10 min).
+Day 1–3:  Certidão permanente received (online, same day or next day).
+Day 2–5:  Perito on-site visit. Cert issued 2 days after.
+Day 5:    Distrate: seller contacts bank.
+Day 7:    Condo declaration: operator contacts administrator.
+Day 3–15: LU copy from Câmara (5–15 working days, municipal variation).
+Day 15–20: All documents received, verified, uploaded.
+Day 20:   ORDER_COMPLETE notification. SmartCMA generated.
+
+ 
+P2: Non-Resident, Algarve Villa, No Mortgage
+Estimated cost to Fizbo: €650–€950. Timeline: 20–30 working days.
+ 
+Day 1:    Confirm residency status. Explain procuração requirement.
+          Send procuração simples template (for standard docs).
+          Explain fiscal representative options if needed.
+Day 1–5:  Seller arranges procuração (local notary or Portuguese consulate abroad).
+Day 5+:   Standard document procurement proceeds as P1.
+Additional: Mais-valias calculation (partner tax consultant, 1–2 days).
+           Non-resident: 50% of capital gains subject to Portuguese progressive tax.
+           Casa Pronta videoconference option briefed for escritura.
+
+ 
+P3: Inherited Property, 3 Heirs (2 PT, 1 France)
+Estimated cost to Fizbo: €700–€1,100. Timeline: 6–10 weeks minimum.
+ 
+Day 1:    Habilitação de Herdeiros initiated immediately. This is the critical path.
+          French heir notified: needs Apostille-certified ID + death certificate (if applicable).
+          Stamp tax calculation provided to all heirs.
+Week 1–2: Portuguese heirs submit documents. French heir gathers Apostille docs.
+Week 3–4: Habilitação de Herdeiros filed at Balcão das Heranças.
+Week 4–6: Habilitação issued.
+Week 6+:  Standard document procurement begins (NOW, not before).
+Week 8–10: Order complete.
+
+KEY: Seller must understand 6–10 week timeline from Day 1.
+     Do not allow expectations of 3-week completion.
+
+ 
+P4: Divorce, Joint Ownership, DocExpress
+Estimated cost to Fizbo: €1,099–€1,605. Timeline: Start in 48h, 10 working days to complete.
+ 
+PRE-ORDER: Require written consent from BOTH spouses before initiating.
+           One uncooperative spouse = complete block on all documents.
+Day 0–1:  Both parties confirm. Rush start begins.
+Day 1:    All document requests initiated simultaneously.
+          Perito booked for earliest available slot (next day if possible).
+          Energy cert express track confirmed with perito.
+Day 2–3:  Certidão permanente (online, same day).
+          Express perito visit.
+Day 3–5:  Energy cert issued.
+Day 5:    Bank distrate initiated by both parties.
+Day 5–10: LU copy (rush Câmara contact, explain urgency, request expedited processing).
+          Note: LU remains the most likely blocker. Be honest with seller about this.
+
+ 
+
+4. Supplier Network
+4.1  Peritos Qualificados — Energy Certification
+Primary marketplace: peritosqualificados.pt (330+ peritos, national coverage). Secondary: direct relationships built through volume.
+ 
+Volume pricing targets:
+Property type
+Market rate
+Target (volume)
+Fizbo margin at target
+T0 / T1 apartment
+€85–€150
+€90–€110
+€40–€60 per cert (included in tier price)
+T2 / T3 apartment
+€120–€200
+€120–€140
+€20–€40 per cert
+Moradia / Villa
+€250–€500+
+€200–€280
+€20–€70 per cert
+
+ 
+Perito requirements for volume partnership:
+Licensed ADENE perito qualificado (verify at adene.pt)
+Coverage in target municipalities (start: Lisboa, Cascais, Sintra, Porto, Albufeira)
+Committed 2–4 day turnaround from booking to certificate issuance
+WhatsApp communication (for rapid booking confirmation)
+Invoice per order (not per month — for order-level cost tracking)
+ 
+Booking process
+Operator books via WhatsApp with perito: property address, typology, seller contact for access.
+Perito confirms date. Operator confirms with seller.
+Perito completes visit + uploads cert to ADENE portal within 2 business days.
+Operator downloads from ADENE using property address, saves to Storage, marks COMPLETE.
+ 
+4.2  Solicitadores — Legal Review
+When needed: DocComplete Premium tier (CPCV review + title check) and all inherited property orders.
+ 
+Fixed-fee target packages:
+CPCV review + title check: €250 flat fee
+Mais-valias calculation: €100–€150
+Full conveyancing support: €500–€800
+Procuração com poderes especiais: €80–€120
+ 
+Selection criteria:
+Licensed solicitador (OA registration verifiable)
+Experience with property transactions (not just corporate law)
+Portuguese + English fluency (for P2 non-resident persona)
+Committed to fixed-fee pricing (avoid hourly billing arrangements)
+Available within 48 hours for Premium/Express orders
+ 
+⚠️  Note:  Build a panel of at least 3 solicitadores before launch — geographic spread (Lisbon, Algarve, Porto). Never rely on a single supplier for legal review.
+
+ 
+4.3  Câmara Municipal Contacts
+There are 308 Portuguese municipalities. Each has a different process for Licença de Utilização requests. Priority launch municipalities:
+ 
+Municipality
+Câmara portal
+Typical LU timeline
+Notes
+Lisboa
+lisboaresponde.pt
+5–10 working days
+Online request available. Reference: Certificado de habitabilidade.
+Cascais
+cascais.pt/camara
+7–15 working days
+Phone follow-up effective. Ask for "Divisão de Urbanismo".
+Sintra
+cm-sintra.pt
+10–15 working days
+High volume, slower. Submit early.
+Oeiras
+cm-oeiras.pt
+5–10 working days
+Generally responsive. Online portal functional.
+Almada
+m-almada.pt
+7–12 working days
+Pre-1974 buildings common. Check pre-1951 exemption first.
+Porto
+cm-porto.pt
+5–10 working days
+Good online system. "Alvará de utilização".
+Albufeira (Algarve)
+cm-albufeira.pt
+10–20 working days
+High P2 persona volume. Phone preferred.
+
+ 
+Tip:  Build a municipality-by-municipality playbook as orders are processed. After 20 orders, patterns emerge. After 50, the operator knows exactly who to call and what to say in each municipality.
+
+ 
+
+5. Unit Economics
+5.1  DocComplete Standard — €399
+Cost component
+Cost
+Notes
+Caderneta Predial
+€0
+Owner self-serves online
+Certidão Permanente
+€15
+Operator requests online
+Licença de Utilização (copy)
+€20–€40
+Municipal fee (varies)
+Certificado Energético (perito)
+€110–€140
+Volume-negotiated perito rate
+Declaração Condomínio
+€0–€25
+Admin fee if charged
+Operator labour (4–5 hours × €14)
+€56–€70
+At €14/hr blended rate
+Platform/payment (Stripe 1.4% + €0.25)
+€6
+On €399
+Total cost
+€207–€296
+
+
+Gross margin at €399
+€103–€192 (26–48%)
+Improves with perito volume pricing
+
+ 
+If seller has valid energy cert (€299 tier): Cost drops by ~€120. Margin at €299: €3–€92. Minimum viable — price this tier at €329.
+ 
+5.2  DocComplete Premium — €899
+Cost component
+Cost
+Notes
+Standard document costs
+€207–€296
+As above
+Solicitador CPCV review
+€250
+Partner fixed fee
+Mais-valias calculation
+€100–€150
+Tax consultant partner
+Additional operator labour (2–3 hrs)
+€28–€42
+Legal coordination overhead
+Total cost
+€585–€738
+
+
+Gross margin at €899
+€161–€314 (18–35%)
+Inherited property at €1,299: margin €561–€714
+
+ 
+5.3  DocExpress — €1,499
+Cost component
+Cost
+Notes
+Premium document costs
+€585–€738
+As above
+Rush fees (Câmara expedited)
+€50–€100
+Not guaranteed; depends on Câmara
+Express perito (priority booking)
+€30–€50
+Perito surcharge for next-day
+Out-of-hours operator labour (10 hrs)
+€200–€250
+€20–€25/hr for express rate
+Total cost
+€865–€1,138
+
+
+Gross margin at €1,499
+€361–€634 (24–42%)
+
+
+
+ 
+⚠️  Note:  DocExpress honest limitation: 48-hour completion is only possible if the Licença de Utilização already exists and the condominium administrator responds immediately. Position as "we start everything simultaneously and push all rush channels." Do not promise 48 hours total.
+
+ 
+
+6. Communication Scripts
+6.1  Order Acknowledgement (WhatsApp — sent automatically)
+PT-PT:
+Olá [Nome], a sua encomenda Fizbo foi recebida.
+Referência: #[ORDER_ID]
+Começamos já a tratar dos seus documentos.
+Pode acompanhar o progresso em: fizbo.pt/dashboard
+Qualquer dúvida, estamos aqui.
+
+EN:
+Hi [Name], your Fizbo order has been received.
+Reference: #[ORDER_ID]
+We are starting work on your documents now.
+Track progress at: fizbo.pt/dashboard
+Any questions, we are here.
+
+ 
+6.2  Blocked Order — Seller Comms
+PT-PT (example: Câmara delay):
+Olá [Nome], uma atualização sobre a sua encomenda #[ORDER_ID]:
+A Câmara de [município] ainda não respondeu ao nosso pedido de Licença de Utilização.
+Continuamos a contactar e esperamos ter resposta até [data].
+Todos os outros documentos estão a ser tratados normalmente.
+Obrigado pela paciência.
+
+EN:
+Hi [Name], an update on your order #[ORDER_ID]:
+[Municipality] council has not yet responded to our Licença de Utilização request.
+We are following up and expect a response by [date].
+All other documents are progressing normally.
+Thank you for your patience.
+
+ 
+6.3  Calling a Câmara — Script
+"Bom dia, ligo da empresa Fizbo, estamos a gerir a documentação para a venda
+de um imóvel em [municipality]. Pedimos a certidão/cópia da licença de
+utilização para o artigo matricial [number] em [date], referência [ref].
+Poderia verificar o estado do pedido? Há previsão de prazo?"
+
+If no record: ask for email address to resubmit.
+If delayed: ask to speak with supervisor. Reference 15 working day legal obligation.
+Log all calls: date, person spoken to, outcome, next follow-up date.
+
+ 
+
+7. Exception Handling
+7.1  Missing Licença de Utilização (Post-1951 Building)
+The property was built after 1951 but no LU is on file with the Câmara. Options in order of preference:
+Check if pre-1951 exemption applies (get Câmara confirmation in writing) — free, instant if applicable
+Check if building was licenced under different legislation (pre-RJUE) — Câmara search, 5 working days
+Post-DL 10/2024: seller can sell without LU, but buyer's mortgage lender may refuse — explain risk to seller clearly
+Full licencing process (licenciamento/legalização): €400–€1,600, 30–90 days — only if seller has time
+ 
+7.2  Heir Does Not Cooperate
+One heir refuses to sign or is uncontactable. Options:
+Legal route: court appointment of a curator (curador) for absent/incapacitated heir — months, expensive
+Practical route: continue trying to locate the heir. 30 days of documented attempts.
+If irretrievable: partial refund and close order. Cannot proceed without all heirs.
+Refer to partner solicitador — they may know routes not available to non-lawyers.
+ 
+7.3  Condominium Administrator Unresponsive
+Day 10: send formal registered letter (carta registada) referencing Lei 8/2022 and the 10-day legal obligation
+Day 15: advise seller to raise with their fractions assembly at the next meeting
+As last resort: buyer's notary can sometimes proceed without declaration at escritura if seller provides written declaration of no outstanding debts
+ 
+7.4  OCR Fails to Extract Fields
+Display manual entry form with partial fields pre-filled from OCR (even if confidence is low)
+Minimum required fields: artigo matricial, municipality, typology, gross area
+Offer assisted entry (guided screen-share for €25) for tech-averse sellers
+Log all OCR failures with document type — feed back to improve Mistral prompt

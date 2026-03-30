@@ -1,0 +1,121 @@
+@startuml Payments_ClassDiagram
+title Payments Module - Class Diagram
+
+class PaymentSession {
+  - id: UUID
+  - order_id: UUID
+  - stripe_session_id: String
+  - stripe_customer_id: String
+  - amount_cents: Integer
+  - amount_eur: Decimal
+  - vat_amount_cents: Integer
+  - vat_percentage: Decimal = 0.23
+  - currency: String = "EUR"
+  - status: Enum (pending, completed, failed, refunded)
+  - created_at: Timestamp
+  - completed_at: Timestamp
+  - refunded_at: Timestamp
+  --
+  + create_checkout_session(): String
+  + get_checkout_url(): String
+  + process_webhook(event): void
+  + process_refund(reason): void
+  + mark_completed(): void
+  + mark_failed(): void
+}
+
+class PricingCalculator {
+  - tier: ServiceTier
+  - has_energy_cert: Boolean
+  - discount_amount_cents: Integer
+  --
+  + calculate_base_price(): Integer
+  + apply_energy_cert_discount(): Integer
+  + calculate_vat(): Integer
+  + calculate_final_amount(): Integer
+  + get_price_breakdown(): PriceBreakdown
+}
+
+class PriceBreakdown {
+  - service_tier: String
+  - base_price: Decimal
+  - discount_description: String
+  - discount_amount: Decimal
+  - subtotal: Decimal
+  - vat_percentage: Decimal
+  - vat_amount: Decimal
+  - total_price: Decimal
+  - currency: String
+  --
+  + display_for_checkout(): String
+  + display_for_receipt(): String
+}
+
+class RefundPolicy {
+  - rule_0_days: String = "100% if no documents requested within 5 working days"
+  - rule_1_days: String = "50% if work started but no documents obtained"
+  - rule_2_days: String = "0% once any document is obtained"
+  --
+  + evaluate_refund_eligibility(order): RefundEligibility
+  + calculate_refund_amount(order, policy_rule): Integer
+}
+
+class RefundEligibility {
+  - order_id: UUID
+  - is_eligible: Boolean
+  - refund_amount_cents: Integer
+  - refund_percentage: Decimal
+  - reason: String
+  - eligible_until_date: Date
+  --
+  + process_refund(): PaymentRefund
+}
+
+class PaymentRefund {
+  - id: UUID
+  - payment_session_id: UUID
+  - order_id: UUID
+  - refund_amount_cents: Integer
+  - reason: Enum
+  - status: Enum (pending, completed, failed)
+  - stripe_refund_id: String
+  - processed_at: Timestamp
+  --
+  + initiate_refund(): void
+  + confirm_refund(): void
+  + cancel_refund(): void
+}
+
+class StripeWebhookHandler {
+  - event_types: List<String>
+  --
+  + handle_checkout_session_completed(event): void
+  + handle_payment_intent_succeeded(event): void
+  + handle_payment_intent_failed(event): void
+  + handle_charge_refunded(event): void
+  + verify_webhook_signature(payload, signature): Boolean
+}
+
+class PaymentNotification {
+  - id: UUID
+  - payment_session_id: UUID
+  - seller_id: UUID
+  - channel: Enum (email, whatsapp)
+  - message_type: Enum (confirmation, receipt, refund, failure)
+  - sent_at: Timestamp
+  --
+  + send_payment_confirmation(session): void
+  + send_receipt(session): void
+  + send_refund_notification(refund): void
+  + send_failure_notification(session, error): void
+}
+
+PaymentSession "1" --> "1" PricingCalculator
+PaymentSession "1" --> "1" PriceBreakdown
+PaymentSession "1" --> "1" RefundPolicy
+PaymentSession "1" --> "1" RefundEligibility
+PaymentSession "1" --> "*" PaymentRefund
+PaymentSession "1" --> "1" StripeWebhookHandler
+PaymentSession "1" --> "*" PaymentNotification
+
+@enduml

@@ -1,0 +1,108 @@
+@startuml Operator_Sequence
+title Operator Module - Order Processing Workflow
+
+actor Operator as O
+participant OperatorDashboard as Dashboard
+participant Backend
+participant Database
+participant DocumentService
+participant SupplierService
+participant NotificationService
+
+O -> Dashboard: Open operator dashboard
+Dashboard -> Backend: tRPC operator.getQueue(filters)
+
+Backend -> Database: Query fizbo_orders + document statuses
+Database --> Backend: Return active orders sorted by urgency
+Backend --> Dashboard: Return queue with real-time updates
+
+Dashboard -> O: Display order list [Status | Days Open | Urgency]
+O -> Dashboard: Click order to view details
+
+Dashboard -> Backend: tRPC operator.getOrder(orderId)
+Backend -> Database: Query FizboOrder + Property + Documents
+Database --> Backend: Return complete order context
+
+Dashboard -> O: Display order detail panel
+
+== Document Status Update ==
+O -> Dashboard: Update document status: Missing → Requested
+Dashboard -> Backend: tRPC operator.updateDocumentStatus(docId, "requested")
+
+Backend -> Database: Update fizbo_documents.status = "requested"
+Database --> Backend: Confirmation
+
+Backend -> DocumentService: Mark document as requested
+DocumentService -> NotificationService: Send DOCUMENT_REQUESTED notification
+
+NotificationService --> O: System log: "Notification sent to seller"
+
+alt Requires Supplier Coordination
+  O -> Dashboard: Select "Coordinate with Perito"
+  Dashboard -> Backend: tRPC operator.requestSupplier(orderId, "perito")
+  
+  Backend -> SupplierService: Get available peritos (municipality)
+  SupplierService --> Backend: Return perito list with pricing
+  Backend --> Dashboard: Show perito selection dropdown
+  
+  O -> Dashboard: Select perito + preferred date
+  Dashboard -> Backend: tRPC operator.bookSupplier(perito_id, date)
+  
+  Backend -> SupplierService: Send booking request (WhatsApp/email)
+  SupplierService --> Backend: Booking confirmation
+  
+  Backend -> Database: Create supplier assignment record
+  Backend -> NotificationService: Send SUPPLIER_BOOKED notification
+  NotificationService --> O: Confirm booking logged
+end
+
+== Seller Action Required ==
+alt Order Needs Seller Input
+  O -> Dashboard: Click "Request Seller Action"
+  Dashboard -> Frontend: Show action type selector
+  
+  O -> Dashboard: Select "Provide procuration" + compose message
+  Dashboard -> Backend: tRPC operator.requestSellerAction(orderId, "procuration", message)
+  
+  Backend -> Database: Create seller action request
+  Backend -> NotificationService: Send SELLER_ACTION_REQUIRED notification
+  NotificationService --> Seller: Email + WhatsApp with instructions
+  NotificationService --> O: Confirmation
+end
+
+== Blocked Order ==
+alt Order is Blocked
+  O -> Dashboard: Flag "Bloqueada"
+  Dashboard -> Backend: tRPC operator.flagBlocked(orderId, reason, est_resolution_date)
+  
+  Backend -> Database: Update fizbo_orders.status = "blocked"
+  Backend -> Database: Store reason + estimated resolution
+  
+  Backend -> NotificationService: Send ORDER_BLOCKED notification
+  NotificationService --> Seller: Email + WhatsApp: "Your order needs attention: [reason]"
+  NotificationService --> O: Order flagged in queue
+end
+
+== Mark Complete ==
+O -> Dashboard: Verify all docs complete
+O -> Dashboard: Click "Mark Order Complete"
+Dashboard -> Backend: tRPC operator.completeOrder(orderId)
+
+Backend -> Database: Update fizbo_orders.status = "complete"
+Backend -> Database: Set completed_at = now()
+
+Backend -> NotificationService: Send ORDER_COMPLETE notification
+NotificationService --> Seller: Email + WhatsApp: "All documents ready"
+
+Backend -> Inngest: Trigger docready/order.complete event
+Inngest -> Backend: Queue SmartCMA generation (async)
+
+Dashboard -> O: Confirmation: "Order complete. SmartCMA queued."
+
+note right of Backend
+  Real-time updates via
+  Supabase Realtime
+  No manual refresh
+end note
+
+@enduml

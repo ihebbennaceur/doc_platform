@@ -1,0 +1,53 @@
+@startuml DocReady_UseCase
+title DocReady Module - Use Case Diagram
+
+left to right direction
+
+actor Seller as S
+actor System as SYS
+
+rectangle DocReady {
+  usecase "Select Service Tier" as UC1
+  usecase "Proceed to Payment" as UC2
+  usecase "Complete Stripe Checkout" as UC3
+  usecase "Create Account" as UC4
+  usecase "Property Onboarding" as UC5
+  usecase "Upload Caderneta" as UC6
+  usecase "Initiate Document Workflow" as UC7
+  usecase "Track Order Progress" as UC8
+  usecase "Manage WhatsApp Notifications" as UC9
+}
+
+S --> UC1
+UC1 --> UC2
+UC2 --> UC3
+UC3 --> UC4
+UC4 --> UC5
+UC5 --> UC6
+UC6 --> UC7
+UC7 --> UC8
+UC8 --> UC9
+
+SYS --> UC3
+SYS --> UC4
+SYS --> UC7
+
+note right of UC3
+  Stripe payment processing
+  VAT handling
+  Refund policy
+end note
+
+note right of UC6
+  OCR processing
+  Document verification
+  Field extraction
+end note
+
+note right of UC7
+  Inngest workflow trigger
+  Document procurement
+  Operator notification
+end note
+
+@enduml

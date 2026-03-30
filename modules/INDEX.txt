@@ -1,0 +1,281 @@
+|█| FIZBO MODULES - COMPLETE DOCUMENTATION INDEX
+
+================================================================================
+                          📦 WHAT YOU HAVE
+================================================================================
+
+✓ 6 Core Modules with Full Documentation
+✓ 18 PlantUML Diagrams (Use Case, Class, Sequence)
+✓ 6 Detailed Module READMEs
+✓ 4 Navigation & Overview Guides
+✓ 27 Total Files
+
+Location: c:\Users\send6\Desktop\pfe_seller_platform\modules\
+
+================================================================================
+                          🗂️ FILE DIRECTORY
+================================================================================
+
+📁 modules/
+│
+├─ 📄 README.md                   ← START HERE (System architecture overview)
+├─ 📄 QUICK_REFERENCE.md          ← Quick module lookup guide
+├─ 📄 VIEWING_GUIDE.md            ← How to view PlantUML diagrams
+├─ 📄 PROJECT_SUMMARY.md          ← Complete deliverables summary
+│
+├─ 📁 01_DocCheck/                [FREE ASSESSMENT TOOL]
+│  ├─ usecase_diagram.puml        (8 questions → document checklist)
+│  ├─ class_diagram.puml          (DocCheckSession, DocCheckResult)
+│  ├─ sequence_diagram.puml       (Assessment flow)
+│  └─ README.md                   (Feature overview)
+│
+├─ 📁 02_DocReady/                [ORDER & PAYMENT PROCESSING]
+│  ├─ usecase_diagram.puml        (Tier selection → account creation)
+│  ├─ class_diagram.puml          (FizboOrder, Property, Payment)
+│  ├─ sequence_diagram.puml       (Full checkout flow)
+│  └─ README.md                   (Payment integration, OCR)
+│
+├─ 📁 03_Documents/               [SECURE STORAGE & LIFECYCLE]
+│  ├─ usecase_diagram.puml        (Upload, track, expire, download)
+│  ├─ class_diagram.puml          (FizboDocument lifecycle)
+│  ├─ sequence_diagram.puml       (Upload to expiry monitoring)
+│  └─ README.md                   (Storage architecture, validity)
+│
+├─ 📁 04_SmartCMA/                [PRICE INTELLIGENCE REPORTS]
+│  ├─ usecase_diagram.puml        (Report generation & export)
+│  ├─ class_diagram.puml          (Report sections & data)
+│  ├─ sequence_diagram.puml       (Valuation → PDF generation)
+│  └─ README.md                   (Market analysis features)
+│
+├─ 📁 05_Operator/                [OPERATIONS QUEUE DASHBOARD]
+│  ├─ usecase_diagram.puml        (Queue management, supplier coordination)
+│  ├─ class_diagram.puml          (OperatorQueue, OrderManagement)
+│  ├─ sequence_diagram.puml       (Order processing workflow)
+│  └─ README.md                   (Operations manual, daily routine)
+│
+└─ 📁 06_Payments/                [STRIPE INTEGRATION & REFUNDS]
+   ├─ usecase_diagram.puml        (Checkout, payment, refunds)
+   ├─ class_diagram.puml          (Payment entities, pricing)
+   ├─ sequence_diagram.puml       (Payment flow)
+   └─ README.md                   (Stripe integration, VAT handling)
+
+================================================================================
+                     🚀 QUICK START: WHERE TO BEGIN
+================================================================================
+
+FOR DEVELOPERS:
+  1. Read: modules/README.md (architecture overview - 10 min)
+  2. Study: 01_DocCheck/class_diagram.puml (data model)
+  3. Review: 02_DocReady/sequence_diagram.puml (checkout flow)
+  4. Implement: Following diagrams in order
+
+FOR PRODUCT MANAGERS:
+  1. Read: modules/README.md (overview)
+  2. Scan: Each module's README.md (features)
+  3. Review: Sequence diagrams for user experience
+
+FOR QA/TESTERS:
+  1. Study: Use case diagrams (test scenarios)
+  2. Review: Sequence diagrams (step-by-step workflows)
+  3. Check: Class diagrams (data validation rules)
+
+FOR OPERATORS:
+  1. Read: 05_Operator/README.md (complete - your manual)
+  2. Reference: 03_Documents/README.md (validity rules)
+  3. Check: 06_Payments/README.md (refund policy)
+
+================================================================================
+                        📊 MODULE DESCRIPTIONS
+================================================================================
+
+01_DOCCHECK - Free Assessment Tool
+   Purpose: Identify missing documents and recommend service tier
+   Users: Sellers (unauthenticated)
+   Flow: 8 questions → Document matrix → Tier recommendation
+   Key Feature: Email capture for lead generation
+
+02_DOCREADY - Order & Payment Processing
+   Purpose: Handle tier selection, Stripe payment, account creation
+   Users: Sellers
+   Flow: Tier selection → Stripe checkout → Auto account creation → OCR
+   Key Feature: Automatic account setup post-payment
+
+03_DOCUMENTS - Secure Document Management
+   Purpose: Store, track, verify documents through their lifecycle
+   Users: Sellers, Operators
+   Flow: Upload → OCR verify → Status track → Expire monitor
+   Key Feature: Private storage + expiry alerts
+
+04_SMARTCMA - Price Intelligence Reports
+   Purpose: Provide data-backed pricing and market insights
+   Users: Sellers (post-completion)
+   Flow: Trigger → PropCheck valuation → Comparables → PDF report
+   Key Feature: Market-specific pricing with confidence score
+
+05_OPERATOR - Operations Queue Dashboard
+   Purpose: Manage document procurement workflow
+   Users: Fizbo operators (admin only)
+   Flow: View queue → Update status → Coordinate suppliers → Track completion
+   Key Feature: Real-time order queue with supplier management
+
+06_PAYMENTS - Stripe Integration & Refunds
+   Purpose: Process payments and manage refund policy
+   Users: Sellers (payment phase)
+   Flow: Price calculation → Stripe checkout → Webhook → Refund processing
+   Key Feature: Dynamic pricing with energy cert discount
+
+================================================================================
+                     💾 TECHNOLOGY STACK BY MODULE
+================================================================================
+
+DocCheck    | FastAPI (Python) + Supabase
+DocReady    | tRPC (TypeScript) + Supabase + Stripe + OCR
+Documents   | tRPC + Supabase Storage + Realtime
+SmartCMA    | tRPC + PropCheck API + Reserva API
+Operator    | tRPC + Supabase Realtime + Inngest
+Payments    | tRPC + Stripe API + Supabase
+
+================================================================================
+                          🎯 KEY BUSINESS RULES
+================================================================================
+
+DOCUMENT VALIDITY:
+  • Caderneta Predial: 12 months
+  • Certidão Permanente: 6 months
+  • Certificado Energético: 10 years
+  • Licença Utilização: No expiry
+  • Habilitação Herdeiros: Permanent
+
+PRICING TIERS:
+  • Standard: €399 (15–20 days, urban resident)
+  • Premium: €899 (20–30 days, non-resident/inherited)
+  • DocExpress: €1,499 (10 days urgent)
+  • Custom: Quote (rural/complex)
+
+REFUND POLICY:
+  • 100%: If no docs requested in 5 working days
+  • 50%: If work started but no docs obtained
+  • 0%: Once any document obtained
+
+DOCUMENT STATES:
+  1. Missing (required, not yet requested)
+  2. Requested (operator asked for it)
+  3. Pending (being processed at supplier)
+  4. Complete (received & verified)
+  5. Expiring (warning period triggered)
+  6. Not Required (logic determined not needed)
+
+================================================================================
+                          📖 HOW TO VIEW DIAGRAMS
+================================================================================
+
+OPTION 1: VS Code (RECOMMENDED)
+  1. Install "PlantUML" extension from VS Code marketplace
+  2. Open any .puml file
+  3. Click preview button (top right) or press Alt+D
+
+OPTION 2: Online
+  1. Visit: https://www.plantuml.com/plantuml/uml/
+  2. Copy-paste .puml file contents
+  3. View rendered diagram instantly
+
+OPTION 3: Command Line
+  1. Install: plantuml (see VIEWING_GUIDE.md)
+  2. Run: plantuml modules/ -r -tpng
+  3. PNG files generated in each folder
+
+================================================================================
+                      ✅ IMPLEMENTATION CHECKLIST
+================================================================================
+
+Phase 1: Core Modules
+  □ Implement DocCheck engine (question evaluation)
+  □ Implement DocReady (Stripe integration, OCR)
+  □ Implement Documents (upload, storage, tracking)
+  □ Implement Operator queue (basic status updates)
+
+Phase 2: Intelligence
+  □ Integrate PropCheck (valuation engine)
+  □ Implement SmartCMA reports
+  □ Add Reserva integration (off-market listings)
+
+Phase 3: Scaling
+  □ Expand supplier network
+  □ Optimize automation
+  □ Add team management
+
+================================================================================
+                          🔗 CROSS-MODULE FLOWS
+================================================================================
+
+USER JOURNEY:
+  Seller → DocCheck → Email capture
+          → DocReady (Decision point: Purchase or not)
+          → Payments (Stripe checkout)
+          → Account Created → Property onboarded
+          → Documents (Status tracking)
+          → Operator manages procurement
+          → SmartCMA (Price report generated)
+          → Exit: Seller has complete docs + pricing
+
+OPERATOR WORKFLOW:
+  Queue view → Filter by status → Click order
+            → View document checklist
+            → Coordinate with suppliers
+            → Update document status (auto-notifies seller)
+            → Mark complete (triggers SmartCMA)
+
+PAYMENT FLOW:
+  Tier selected → Price calculated (with discount)
+              → Stripe session created
+              → Seller redirected to Stripe
+              → Payment completed
+              → Webhook received
+              → Order created → Account created
+              → Email with magic link sent
+
+================================================================================
+                          📞 GETTING HELP
+================================================================================
+
+Need to understand...
+
+  A SPECIFIC FEATURE?
+    → Check that module's README.md
+
+  HOW A WORKFLOW WORKS?
+    → Review the sequence_diagram.puml for that module
+
+  DATA RELATIONSHIPS?
+    → Study the class_diagram.puml
+
+  USER INTERACTIONS?
+    → Review the usecase_diagram.puml
+
+  HOW TO VIEW DIAGRAMS?
+    → Read VIEWING_GUIDE.md
+
+  QUICK LOOKUP OF ALL MODULES?
+    → Check QUICK_REFERENCE.md
+
+================================================================================
+                        ⭐ FINAL NOTES
+================================================================================
+
+✓ All diagrams are in PlantUML format (plain text, version control friendly)
+✓ Each module is independently documented and can be understood in isolation
+✓ Sequence diagrams show exact workflow order and integration points
+✓ Class diagrams define all data entities and relationships
+✓ Use case diagrams identify all actors and features
+✓ README files provide business context and rules
+
+You have everything needed to:
+  • Understand the system architecture
+  • Implement modules following the design
+  • Test workflows systematically
+  • Manage operations efficiently
+
+Ready to build! 🚀
+
+================================================================================
+Document Version: 1.0 | Created: March 2026 | Status: Confidential

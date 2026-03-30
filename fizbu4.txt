@@ -1,0 +1,381 @@
+ 
+FIZBO.PT
+UX & Design Brief
+Stakeholder journeys, screen flows & interface specifications
+UX Brief — For Senior Developer & Designer
+v1.0  ·  March 2026  ·  Confidential — FAIRBANK Group
+
+1. Design Principles
+Fizbo's users are anxious. Selling a property is one of the highest-stakes financial decisions in a person's life. The UX must project calm confidence, reduce cognitive load, and make every step feel achievable.
+ 
+Design north star:  "Professional guidance without agency pressure." Every screen should feel like advice from a knowledgeable friend — not a sales funnel and not a bureaucratic form.
+
+ 
+1.1  Core UX Principles
+
+
+
+
+
+
+
+
+
+
+ 
+1.2  Brand Identity
+Element
+Value
+Usage
+Primary colour
+#2E5D4B (Forest green)
+CTAs, headings, progress indicators
+Accent colour
+#4A9B7F (Mid green)
+Hover states, secondary actions
+Gold accent
+#C9A84C (Warm gold)
+Borders, highlights, premium tier indicators
+Background
+#F5F0E8 (Warm cream)
+Page backgrounds, card surfaces
+Dark text
+#1A1A2E
+Body text, headings
+Font
+Inter (headings) + Source Serif 4 (body)
+Combines authority with warmth
+Border radius
+8px (cards), 4px (inputs), 24px (CTAs)
+Rounded but structured — not playful
+Iconography
+Lucide icons (outlined, 20px)
+Consistent, clean, not decorative
+
+ 
+1.3  Language & Tone
+Address the seller as "você" (formal but warm — not the informal "tu")
+Use plain language: "tratamos dos seus documentos" not "procedemos à obtenção da documentação necessária"
+Positive framing: "Only 2 documents missing" not "Missing 2 documents"
+Specificity over vagueness: "We requested your document on Monday; typical wait is 7–10 days" not "In progress"
+English version: same principles, British spelling (seller base is UK/NL/DE)
+ 
+
+2. Public-Facing Screens
+2.1  Homepage (/)
+HERO SECTION
+  Headline: "Venda o seu imóvel com todos os documentos em ordem."
+  Sub: "Tratamos de tudo — da caderneta ao certificado energético."
+  Primary CTA: "Verificar os meus documentos" → /verificar
+  Secondary CTA (text link): "Ver como funciona" → anchor to How It Works
+
+TRUST BAR
+  3 stats: "X propriedades documentadas" | "Y certificados energéticos" | "Z% satisfação"
+  (Use round numbers at launch: "100+ | 80+ | 98%")
+
+HOW IT WORKS (3 steps)
+  1. "Verifique o que falta" — DocCheck illustration
+  2. "Nós tratamos de tudo" — Document icons animation
+  3. "Venda com confiança" — Sale confirmation illustration
+
+SERVICE TIERS (pricing cards)
+  Standard | Premium | DocExpress
+  Each card: price, what's included, CTA to DocCheck
+
+SOCIAL PROOF
+  3–4 seller testimonials (collect from beta)
+  "Verified seller" badge on each testimonial
+
+FOOTER
+  FAIRBANK Group | AMI number | Privacy Policy | Terms | Contacts
+  AMI number must be visible in footer on every page — legal requirement
+
+ 
+2.2  DocCheck Tool (/verificar)
+The DocCheck tool is the most important acquisition screen. It must be fast, simple, and end with a specific, personalised recommendation — not a generic one.
+ 
+SCREEN 1: Introduction
+  Headline: "Descubra que documentos precisa para vender"
+  Sub: "8 perguntas rápidas. Resultado personalizado. Gratuito."
+  CTA: "Começar"
+  Progress bar: shown from this point (0/8)
+
+SCREENS 2–9: Questions (one per screen)
+  Layout: Question text (large) + 2–4 answer options (large touch targets)
+  Progress bar advances with each answer
+  Back button always visible
+  No next button — answer selection auto-advances
+
+SCREEN 10: Email capture (before showing result)
+  Headline: "O seu relatório está pronto"
+  Sub: "Introduza o seu email para ver os resultados"
+  Input: Email field + CTA "Ver o meu relatório"
+  Social proof: "Junte-se a X vendedores que já usaram o DocCheck"
+
+SCREEN 11: Result page
+  Section 1: Document checklist (green ticks for present, red flags for missing)
+  Section 2: Recommended service with personalised price
+    (if Q7=yes: show price with -€100 energy cert deduction)
+  Section 3: Timeline estimate
+  Section 4: Risk flags (if any)
+  Primary CTA: "Encomendar o [recommended tier]"
+  Secondary CTA: "Falar connosco primeiro" (WhatsApp link)
+
+ 
+2.3  Pricing Page (/precos)
+Three pricing cards side by side (stack on mobile):
+
+Standard — €399
+  Ideal para: apartamento ou moradia em condomínio, residente em Portugal
+  Includes: [bulleted list of 6 documents + energy cert coordination]
+  Timeline: 15–20 dias úteis
+  CTA: "Começar"
+
+Premium — €899  [MOST POPULAR badge]
+  Ideal para: não-residente, herdeiros, situações complexas
+  Includes: Standard + revisão jurídica CPCV + cálculo mais-valias
+  Timeline: 20–30 dias úteis
+  CTA: "Começar"
+
+DocExpress — €1,499
+  Ideal para: prazo urgente, divórcio, deadline confirmada
+  Includes: Premium + início em 48h + processamento em paralelo
+  Timeline: Início em 48h, 10 dias úteis
+  CTA: "Falar connosco"  (WhatsApp — confirm before charging)
+
+FAQ section below pricing cards
+Trust signals: AMI number, FAIRBANK logo, secure payment badge
+
+ 
+
+3. Seller Dashboard Screens
+3.1  Post-Payment Onboarding
+SCREEN: Welcome + Account Setup
+  "Bem-vindo ao Fizbo, [Nome]! A sua encomenda #[ID] foi confirmada."
+  Step 1 of 2: "Faça upload da sua Caderneta Predial"
+  Upload area: large drag-and-drop zone + "Ou escolha um ficheiro"
+  Supported: PDF, JPG, PNG (max 20MB)
+  Tip box: "Pode descarregar a sua caderneta no Portal das Finanças (atf.dgci.min-financas.pt)"
+  CTA: "Enviar documento"
+
+AFTER UPLOAD: OCR processing (spinner + "A verificar o seu documento...")
+  SUCCESS: Show extracted fields for confirmation:
+    "Confirmamos os dados da sua propriedade:"
+    Artigo Matricial: [xxx]
+    Morada: [address]
+    Tipologia: [T2 / T3 / etc.]
+    Área Bruta: [xxx] m²
+    VPT: [€xxx]
+    CTA: "Confirmar e continuar"
+    Link: "Corrigir dados manualmente"
+
+  FAILURE / LOW CONFIDENCE:
+    "Não conseguimos ler todos os dados. Por favor introduza manualmente:"
+    Form: 4 fields (artigo matricial, município, tipologia, área bruta)
+
+STEP 2 of 2: Phone number + WhatsApp opt-in
+  "Queremos mantê-lo informado a cada passo."
+  Input: Phone (international format)
+  Checkbox: "Aceito receber notificações por WhatsApp"
+  CTA: "Activar a minha encomenda"
+
+SCREEN: Confirmation
+  "Excelente! Já estamos a trabalhar nos seus documentos."
+  Animation: document icons filling in one by one
+  CTA: "Ver o meu painel"
+
+ 
+3.2  Main Dashboard (/dashboard)
+HEADER
+  "Olá, [Nome]. Aqui está o estado dos seus documentos."
+  Property address (from caderneta)
+  Order reference + tier badge
+
+DOCUMENT TRACKER (main component)
+  Each document displayed as a card with:
+    - Document name (plain language)
+    - Status badge: [A obter] [Em curso] [Pronto ✓] [A expirar ⚠]
+    - Status message: "Pedimos este documento na [data]. Prazo habitual: X dias."
+    - Download button (when COMPLETE)
+
+  Documents ordered by: 1) Blocked 2) In progress 3) Complete
+
+OVERALL PROGRESS
+  Progress bar: "X de Y documentos prontos"
+  Estimated completion date (calculated from order creation + tier SLA)
+
+ACTION REQUIRED (if any — highlighted at top)
+  If operator has requested seller action:
+  Banner: "A sua ação é necessária" + description + action button
+  e.g. "Por favor assine a procuração e faça upload aqui"
+
+SMARTCMA SECTION (appears after order complete)
+  Card: "O seu relatório de preço está pronto"
+  Preview: property address + price band teaser
+  CTA: "Ver o meu relatório SmartCMA"
+
+NEXT STEPS
+  After completion: "O que acontece agora?"
+  1. Obtenha o seu SmartCMA
+  2. Ative a sua listagem off-market no Reserva
+  3. Partilhe os documentos com o seu notário
+
+ 
+3.3  SmartCMA Report Screen (/dashboard/relatorio)
+HEADER
+  Property address + typology + area
+  "Relatório gerado em [date]"  |  PDF download button (top right)
+
+SECTION 1: PRICE BAND
+  Large visual: three-zone bar chart
+    Left zone (light): "Estimativa conservadora — €285,000"
+    Centre zone (primary colour): "Valor de referência — €298,000"
+    Right zone (light): "Estimativa optimista — €312,000"
+  Confidence badge: "Alta confiança" / "Confiança média" / "Dados limitados"
+  Explanation: "Baseado em X transações verificadas na freguesia de [X], últimos 12 meses."
+
+SECTION 2: COMPARABLE TRANSACTIONS
+  Table: 3–5 rows
+    Columns: Tipologia | Área (m²) | Data | Preço | €/m²
+    All anonymised — no address shown
+    Footer: "Fonte: dados de transação verificados"
+
+SECTION 3: REALITY GAP
+  Highlighted box:
+  "Em [município], os vendedores aceitam em média X% abaixo do preço pedido."
+  "O preço inicial certo poupa meses no mercado."
+
+SECTION 4: DAYS-ON-MARKET PREDICTION
+  Three rows:
+    €[X] (5% below median) → "20–35 dias estimados"
+    €[Y] (at median)       → "45–60 dias estimados"
+    €[Z] (5% above median) → "90–120 dias estimados"
+
+SECTION 5: BUYERHEAT
+  "X+ compradores verificados na nossa plataforma correspondem ao perfil da sua propriedade."
+  CTA: "Ativar listagem off-market no Reserva"
+
+SECTION 6: ENERGY CLASS IMPACT
+  "A classe [X] do seu imóvel está [acima/abaixo] da média de comparáveis."
+  Impact estimate: "+/- €X,000 estimado vs. média da classe energética."
+
+ 
+
+4. Operator Dashboard Screens
+4.1  Operator Queue (/admin/queue)
+PAGE HEADER
+  "Painel de Operações" | Today's date
+  Summary chips: [X Activas] [Y Bloqueadas] [Z Aguardam acção] [W Concluídas esta semana]
+
+FILTERS BAR
+  Status: All | Active | Blocked | Awaiting seller | Complete
+  Tier: All | Standard | Premium | Express
+  Search: by order ID, seller name, or address
+
+ORDER TABLE (sortable columns)
+  Columns:
+    Order ID (link to detail)
+    Seller name
+    Property address / municipality
+    Tier (badge: Standard / Premium / Express)
+    Status (badge with colour: Active=blue, Blocked=red, Waiting=amber, Complete=green)
+    Docs ready (e.g. "3/6")
+    Days open
+    Urgency flag (auto-calculated: > 15 days without completion = high)
+  Each row: click to open order detail
+  Rows update in real-time (Supabase Realtime subscription)
+
+ 
+4.2  Order Detail (/admin/orders/[id])
+LEFT PANEL: Property & Seller Info
+  Property: artigo matricial, address, typology, area, VPT
+  Seller: name, email, phone, language, residency, ownership type
+  Order: tier, payment confirmed, Stripe reference, created date
+
+CENTRE PANEL: Document Checklist
+  Each document row:
+    Document name
+    Status dropdown: [Missing] [Requested] [Pending] [Complete] [Not Required]
+    Date obtained / expected date
+    Notes field (internal — not visible to seller)
+    Upload button (for documents obtained by operator)
+    Download button (for uploaded docs)
+  "Mark order complete" button (active when all docs are Complete or Not Required)
+
+RIGHT PANEL: Actions & Comms
+  Quick actions:
+    [Request seller action] → opens modal with action type + message
+    [Flag as blocked] → opens modal with reason + estimated resolution date
+    [Add internal note] → operator-only note, not visible to seller
+    [View seller dashboard] → opens seller view (read-only)
+
+  Comms log:
+    All automated notifications sent (timestamp + channel + content)
+    All manual messages sent by operator
+    All seller responses (if via dashboard comms)
+    Sorted newest first
+
+  Supplier assignments:
+    Perito: name, booking date, appointment date, cert received date
+    Solicitador: name, brief, deliverable, status
+
+ 
+
+5. Mobile UX Considerations
+5.1  DocCheck on Mobile
+Answer buttons must be minimum 48px height with 16px font — large enough for thumbs
+One question per screen — do not show multiple questions on mobile
+Progress indicator at top (e.g. "4 de 8 perguntas") — not a progress bar on narrow screens
+Back button always accessible — top left, minimum 44×44px touch target
+ 
+5.2  Document Upload on Mobile
+Support camera capture directly (accept="image/*;capture=environment")
+Show image preview before submission with "Parece bem?" confirmation
+File size warning if > 10MB (Portal das Finanças PDFs are usually < 2MB)
+Processing state: clear spinner + "A analisar o seu documento..." (30s max)
+ 
+5.3  Dashboard on Mobile
+Document tracker: cards stack vertically, full width, with large status badge
+Download button: full-width on mobile, opens in new tab (PDF viewer)
+SmartCMA price band: horizontal scroll chart or simplified vertical version on < 400px
+All CTAs: minimum 48px height, full width on mobile
+ 
+5.4  WhatsApp Deep Links
+All WhatsApp CTAs: use wa.me/351XXXXXXXXX?text= format
+Pre-fill the message with order reference: ?text=Olá, referência encomenda %23[ORDER_ID]
+Test deep links on iOS and Android — behaviour differs between native and web
+ 
+
+6. Error States & Edge Cases
+6.1  Error States to Design
+State
+User-facing message
+Action
+OCR fails
+"Não conseguimos ler o documento. Introduza os dados manualmente."
+Show manual entry form
+Payment fails
+"O pagamento não foi processado. Por favor tente novamente."
+Retry CTA + support link
+Stripe webhook delayed
+"A confirmar o pagamento... isto pode demorar um momento."
+Polling + redirect on confirm
+Document upload too large
+"O ficheiro é demasiado grande (máx. 20MB). Comprima e tente novamente."
+Compression tip shown
+Session expired
+"A sua sessão expirou. Por favor entre novamente."
+Redirect to login, restore post-login
+SmartCMA generation fails
+"O relatório está a ser preparado. Receberá um email quando estiver pronto."
+Queue for retry + email on complete
+
+ 
+6.2  Empty States
+New seller with no orders: show DocCheck CTA prominently — "Ainda não tem encomendas. Comece por verificar os seus documentos."
+Operator queue with no active orders: "Sem encomendas activas. Bom trabalho!" with confetti or simple success state
+ 
+6.3  Loading States
+DocCheck submission: skeleton loader for result page (2–3 seconds for API call)
+Dashboard: skeleton cards for document tracker (load order data async)
+SmartCMA: progress indicator showing steps ("Analisando o mercado... Calculando comparáveis... Gerando relatório...")

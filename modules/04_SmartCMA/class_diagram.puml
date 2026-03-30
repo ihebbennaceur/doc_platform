@@ -1,0 +1,121 @@
+@startuml SmartCMA_ClassDiagram
+title SmartCMA Module - Class Diagram
+
+class SmartCMAReport {
+  - id: UUID
+  - property_id: UUID
+  - seller_id: UUID
+  - order_id: UUID
+  - price_band: PriceBand
+  - comparables: List<Comparable>
+  - reality_gap: RealityGap
+  - days_on_market: DaysOnMarket
+  - buyer_heat: Integer
+  - energy_impact: EnergyImpact
+  - confidence_score: Decimal
+  - methodology_note: String
+  - generated_at: Timestamp
+  - pdf_url: String
+  --
+  + generate(): SmartCMAReport
+  + generate_pdf(): String
+  + export_pdf(): File
+}
+
+class PriceBand {
+  - low_estimate: Decimal
+  - mid_estimate: Decimal
+  - high_estimate: Decimal
+  - currency: String
+  - confidence_level: Enum (HIGH, MEDIUM, LOW)
+  --
+  + calculate_range(): void
+  + get_confidence_note(): String
+}
+
+class Comparable {
+  - id: UUID
+  - property_id: UUID
+  - typology: String
+  - area: Decimal
+  - transaction_date: Date
+  - transaction_price: Decimal
+  - price_per_sqm: Decimal
+  - parish: String
+  - is_anonymised: Boolean
+  --
+  + from_valuation_engine(data): Comparable
+}
+
+class RealityGap {
+  - municipality: String
+  - avg_asking_to_transaction_discount: Decimal
+  - time_on_market_impact: String
+  - description: String
+  --
+  + get_discount_percentage(): Decimal
+  + get_market_insight(): String
+}
+
+class DaysOnMarket {
+  - price_point_low: Decimal
+  - days_low: Integer
+  - price_point_mid: Decimal
+  - days_mid: Integer
+  - price_point_high: Decimal
+  - days_high: Integer
+  --
+  + get_prediction_for_price(price): Integer
+}
+
+class BuyerHeat {
+  - total_matching_buyers: Integer
+  - buyer_pool_size: Integer
+  - rounded_to_nearest_5: Integer
+  - source: String (Reserva)
+  --
+  + calculate_heat(): Integer
+  + get_buyer_pool_summary(): String
+}
+
+class EnergyImpact {
+  - property_energy_class: String
+  - comparable_avg_energy_class: String
+  - estimated_premium_discount: Decimal
+  - explanation: String
+  --
+  + calculate_impact(): Decimal
+}
+
+class ValuationEngine {
+  - name: String = "PropCheck AVM"
+  --
+  + get_price_band(property_id): PriceBand
+  + get_comparables(property_id): List<Comparable>
+}
+
+class ReservaAPI {
+  - endpoint: String
+  --
+  + get_matching_buyers(property_id): Integer
+}
+
+class PDFGenerator {
+  - library: String = "@react-pdf/renderer"
+  --
+  + generate_report_pdf(report): Buffer
+  + upload_to_storage(pdf): String
+}
+
+SmartCMAReport "1" --> "1" PriceBand
+SmartCMAReport "1" --> "*" Comparable
+SmartCMAReport "1" --> "1" RealityGap
+SmartCMAReport "1" --> "1" DaysOnMarket
+SmartCMAReport "1" --> "1" BuyerHeat
+SmartCMAReport "1" --> "1" EnergyImpact
+ValuationEngine --> PriceBand
+ValuationEngine --> Comparable
+ReservaAPI --> BuyerHeat
+PDFGenerator --> SmartCMAReport
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml DocCheck_UseCase
+title DocCheck Module - Use Case Diagram
+
+left to right direction
+
+actor Seller as S
+actor System as SYS
+
+rectangle DocCheck {
+  usecase "Access DocCheck Tool" as UC1
+  usecase "Answer Assessment Questions" as UC2
+  usecase "Evaluate Document Requirements" as UC3
+  usecase "View Result & Recommendations" as UC4
+  usecase "Capture Email" as UC5
+  usecase "Recommend Service Tier" as UC6
+  usecase "Display Risk Flags" as UC7
+  usecase "Persist Session" as UC8
+}
+
+S --> UC1
+UC1 --> UC2
+UC2 --> UC3
+UC3 --> UC5
+UC5 --> UC4
+UC3 --> UC6
+UC3 --> UC7
+UC3 --> UC8
+
+SYS --> UC3
+SYS --> UC6
+
+note right of UC2
+  8 questions
+  branching logic
+  < 90 seconds
+end note
+
+note right of UC4
+  Document checklist
+  Tier recommendation
+  Price estimate
+  Timeline
+end note
+
+note right of UC8
+  24-hour browser
+  session storage
+end note
+
+@enduml

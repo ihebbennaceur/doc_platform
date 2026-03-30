@@ -1,0 +1,80 @@
+@startuml Documents_Sequence
+title Documents Module - Document Lifecycle
+
+actor Seller
+actor Operator
+participant Frontend
+participant Backend
+participant StorageService
+participant Database
+participant ExpiryMonitor
+
+== Document Request by Operator ==
+Operator -> Backend: tRPC operator.updateDocumentStatus(docId, "requested")
+Backend -> Database: Update fizbo_documents.status = "requested"
+Database -> Backend: Confirmation
+Backend -> Database: Query FizboDocument + Seller contact
+Database --> Backend: Return document and seller info
+Backend -> NotificationService: Send DOCUMENT_REQUESTED notification
+NotificationService --> Seller: Email + WhatsApp: "We requested [document]"
+
+== Seller Uploads Document ==
+Seller -> Frontend: Upload document file
+Frontend -> Frontend: Validate file size (max 20MB)
+Frontend -> Backend: tRPC documents.upload(orderId, docType, file)
+
+Backend -> StorageService: POST /upload to Supabase Storage
+StorageService -> StorageService: Store in fizbo-documents bucket
+StorageService --> Backend: Return storage_path
+
+Backend -> Database: Create DocumentUpload record
+Database --> Backend: Confirmation
+
+Backend -> Database: Update fizbo_documents.status = "pending"
+Backend -> Database: Update obtained_at timestamp
+Database --> Backend: Confirmation
+
+Backend -> NotificationService: Send DOCUMENT_UPLOADED notification
+NotificationService --> Operator: Alert operator to verify
+
+== Operator Verifies Document ==
+Operator -> Backend: tRPC operator.updateDocumentStatus(docId, "complete")
+Backend -> Database: Update fizbo_documents.status = "complete"
+Backend -> Database: Update updated_at timestamp
+
+Backend -> Database: Extract expiry_date (if applicable)
+Database --> Backend: Stored expiry info
+
+Backend -> ExpiryMonitor: Create expiry monitoring record
+ExpiryMonitor --> Backend: Monitor scheduled
+
+Backend -> NotificationService: Send DOCUMENT_COMPLETE notification
+NotificationService --> Seller: Email + WhatsApp: "[Document] is ready"
+
+== Seller Downloads Document ==
+Seller -> Frontend: Click download button
+Frontend -> Backend: tRPC documents.download(documentId)
+
+Backend -> Database: Query DocumentUpload.storage_path
+Database --> Backend: Return path
+
+Backend -> StorageService: Generate signed URL (1-hour expiry)
+StorageService --> Backend: Return signed URL
+
+Backend --> Frontend: Return URL
+Frontend -> Seller: Trigger download via signed URL
+
+== Daily Expiry Check ==
+ExpiryMonitor -> Database: Find documents expiring in 30 days
+Database --> ExpiryMonitor: Return matching documents
+
+loop For Each Expiring Document
+  ExpiryMonitor -> Database: Check if alert_sent_30days = false
+  alt Alert Not Sent
+    ExpiryMonitor -> NotificationService: Send 30-day expiry alert
+    NotificationService --> Seller: Email: "Document expires in 30 days"
+    ExpiryMonitor -> Database: Update alert_sent_30days = true
+  end
+end
+
+@enduml

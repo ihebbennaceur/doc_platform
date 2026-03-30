@@ -1,0 +1,81 @@
+@startuml SmartCMA_Sequence
+title SmartCMA Module - Report Generation Flow
+
+actor Seller
+participant Frontend
+participant Backend
+participant ValuationEngine
+participant ReservaAPI
+participant PDFService
+participant StorageService
+participant Database
+participant NotificationService
+
+Seller -> Frontend: View completed order dashboard
+Frontend -> Frontend: Display SmartCMA CTA
+Seller -> Frontend: Click "Ver o meu relatório SmartCMA"
+
+Frontend -> Backend: tRPC smartcma.generate(propertyId)
+Backend -> Database: Check if report already generated
+Database --> Backend: Return existing report or null
+
+alt Report Already Generated
+  Backend --> Frontend: Return cached report
+else Generate New Report
+  
+  Backend -> ValuationEngine: Call PropCheck AVM API
+  ValuationEngine -> ValuationEngine: Analyze property attributes
+  ValuationEngine -> ValuationEngine: Query transaction database
+  ValuationEngine -> ValuationEngine: Calculate price band & confidence
+  
+  ValuationEngine --> Backend: Return PriceBand {low, mid, high}
+  
+  Backend -> ValuationEngine: GET /comparables?property_id&limit=5
+  ValuationEngine -> ValuationEngine: Match typology + parish + 12 months
+  ValuationEngine --> Backend: Return List<Comparable> (anonymised)
+  
+  Backend -> ReservaAPI: GET /matching-buyers?property_id
+  ReservaAPI -> ReservaAPI: Query buyer pool for profile match
+  ReservaAPI --> Backend: Return buyer_count (rounded to 5)
+  
+  Backend -> Backend: Calculate RealityGap (municipality average)
+  Backend -> Backend: Calculate DaysOnMarket predictions (3 price points)
+  Backend -> Backend: Calculate EnergyImpact (class adjustment)
+  
+  Backend -> Database: Create SmartCMAReport record
+  Database --> Backend: Report saved with id
+  
+  Backend -> PDFService: Generate PDF from report data
+  PDFService -> PDFService: Render React PDF template
+  PDFService -> PDFService: Compile to PDF binary
+  
+  PDFService -> StorageService: Upload PDF to Supabase Storage
+  StorageService --> PDFService: Return signed URL (24-hour expiry)
+  
+  PDFService --> Backend: Return pdf_url
+  Backend -> Database: Update SmartCMAReport.pdf_url
+  
+  Backend -> NotificationService: Send SMARTCMA_READY notification
+  NotificationService --> Seller: Email: "Your SmartCMA report is ready"
+  
+  Backend --> Frontend: Return SmartCMAReport with pdf_url
+end
+
+Frontend -> Seller: Display report page
+Seller -> Frontend: View price band, comparables, market insights
+Seller -> Frontend: Click "Download PDF"
+Frontend -> StorageService: Fetch signed URL file
+StorageService --> Seller: Download PDF
+
+note right of ValuationEngine
+  PropCheck integration
+  No direct calls to external AVM
+  Cached results where possible
+end note
+
+note right of PDFService
+  60-second timeout
+  Fallback: email PDF later if timeout
+end note
+
+@enduml

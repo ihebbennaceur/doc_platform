@@ -1,0 +1,108 @@
+@startuml DocReady_ClassDiagram
+title DocReady Module - Class Diagram
+
+class FizboOrder {
+  - id: UUID
+  - property_id: UUID
+  - seller_id: UUID
+  - tier: Enum (standard, premium, express, custom)
+  - status: Enum (created, active, blocked, complete, cancelled)
+  - stripe_session: String
+  - stripe_payment: String
+  - amount_paid: Integer (cents)
+  - inngest_run_id: String
+  - energy_cert_present: Boolean
+  - created_at: Timestamp
+  - completed_at: Timestamp
+  --
+  + create_order(): FizboOrder
+  + update_status(): void
+  + mark_complete(): void
+  + calculate_amount(): Integer
+}
+
+class SellerProfile {
+  - id: UUID
+  - user_id: UUID
+  - property_id: UUID
+  - residency_status: Enum
+  - ownership_type: Enum
+  - mortgage_bank: String
+  - proxy_required: Boolean
+  - procuracao_url: String
+  - fiscal_rep_required: Boolean
+  - preferred_language: String
+  - phone: String
+  - whatsapp_opt_in: Boolean
+  - created_at: Timestamp
+  --
+  + create(): SellerProfile
+  + update_preferences(): void
+  + require_procuration(): void
+}
+
+class Property {
+  - id: UUID
+  - artigo_matricial: String
+  - address: String
+  - municipality: String
+  - parish: String
+  - typology: String
+  - gross_area: Decimal
+  - vpt: Decimal
+  - owner_name: String
+  - construction_year: Integer
+  --
+  + from_caderneta(pdf): Property
+  + validate_ocr_data(): Boolean
+}
+
+class PaymentSession {
+  - id: UUID
+  - order_id: UUID
+  - stripe_session_id: String
+  - amount: Integer
+  - currency: String (EUR)
+  - vat_amount: Integer
+  - status: Enum (pending, completed, failed, refunded)
+  - created_at: Timestamp
+  - completed_at: Timestamp
+  --
+  + create_checkout_session(): String
+  + apply_discount(): Integer
+  + process_refund(): Boolean
+}
+
+class ServiceTier {
+  - name: String
+  - price: Integer (cents)
+  - description: String
+  - timeline_days: Integer
+  - included_documents: List<String>
+  - parallel_processing: Boolean
+  --
+  + calculate_final_price(discount): Integer
+  + get_timeline_estimate(): Integer
+}
+
+class CadernetaUpload {
+  - id: UUID
+  - order_id: UUID
+  - file_path: String
+  - ocr_status: Enum (pending, processing, success, failed)
+  - extracted_data: JSONB
+  - confidence_score: Decimal
+  - uploaded_at: Timestamp
+  --
+  + process_ocr(): void
+  + extract_fields(): JSONB
+  + fallback_to_manual(): void
+}
+
+FizboOrder "1" --> "1" SellerProfile
+FizboOrder "1" --> "1" Property
+FizboOrder "1" --> "1" PaymentSession
+FizboOrder "1" --> "1" ServiceTier
+FizboOrder "1" --> "1" CadernetaUpload
+
+@enduml

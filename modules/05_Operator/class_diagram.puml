@@ -1,0 +1,103 @@
+@startuml Operator_ClassDiagram
+title Operator Module - Class Diagram
+
+class OperatorQueue {
+  - id: UUID
+  - order_id: UUID
+  - task_type: String
+  - status: Enum (pending, in_progress, complete, blocked)
+  - assigned_to: UUID (operator_id)
+  - priority: Integer (1-10)
+  - due_date: Date
+  - notes: String
+  - created_at: Timestamp
+  - updated_at: Timestamp
+  --
+  + create_task(): OperatorQueue
+  + assign_to_operator(operator_id): void
+  + update_status(): void
+  + set_priority(): void
+  + add_notes(): void
+}
+
+class OperatorDashboard {
+  - operator_id: UUID
+  - current_queue: List<OperatorQueue>
+  - filters: QueueFilters
+  - sort_by: String
+  --
+  + get_active_orders(): List<FizboOrder>
+  + get_blocked_orders(): List<FizboOrder>
+  + get_awaiting_seller_orders(): List<FizboOrder>
+  + get_completed_orders(): List<FizboOrder>
+  + filter_by_tier(): List<FizboOrder>
+  + search_order(): List<FizboOrder>
+}
+
+class OrderManagement {
+  - order_id: UUID
+  --
+  + request_seller_action(action_type, message): void
+  + flag_as_blocked(reason, estimated_date): void
+  + add_internal_note(note): void
+  + update_document_status(doc_id, status, notes): void
+  + mark_complete(): void
+  + get_order_details(): FizboOrder
+}
+
+class SupplierCoordination {
+  - supplier_type: Enum (perito, solicitador, camara, admin)
+  - supplier_id: UUID
+  - task_id: UUID
+  --
+  + book_perito_appointment(date, time): Booking
+  + request_municipal_copy(): Request
+  + coordinate_legal_review(): Task
+  + request_condominium_declaration(): Task
+  + track_delivery(): DeliveryStatus
+}
+
+class CommunicationLog {
+  - id: UUID
+  - order_id: UUID
+  - channel: Enum (email, whatsapp, sms, dashboard)
+  - sender: Enum (system, operator, seller)
+  - message: String
+  - sent_at: Timestamp
+  - read_by_seller: Boolean
+  - response_received: Boolean
+  --
+  + log_notification(channel, message): void
+  + log_manual_message(operator_id, message): void
+  + mark_as_read(): void
+}
+
+class TaskQueue {
+  - operator_id: UUID
+  --
+  + get_pending_tasks(): List<OperatorQueue>
+  + get_in_progress_tasks(): List<OperatorQueue>
+  + prioritize_tasks(): List<OperatorQueue>
+  + get_overdue_tasks(): List<OperatorQueue>
+}
+
+class OperatorMetrics {
+  - operator_id: UUID
+  - period: Period
+  --
+  + get_avg_completion_time(): Decimal
+  + get_orders_completed(): Integer
+  + get_customer_satisfaction(): Decimal
+  + get_blocked_orders_count(): Integer
+  + get_reopened_orders_count(): Integer
+}
+
+OperatorQueue "many" --> "1" FizboOrder
+OperatorDashboard "1" --> "*" OperatorQueue
+OrderManagement "1" --> "1" FizboOrder
+OrderManagement "many" --> "*" SupplierCoordination
+FizboOrder "1" --> "*" CommunicationLog
+TaskQueue "1" --> "*" OperatorQueue
+OperatorQueue --> OperatorMetrics
+
+@enduml

@@ -1,0 +1,53 @@
+@startuml Payments_UseCase
+title Payments Module - Use Case Diagram
+
+left to right direction
+
+actor Seller as S
+actor System as SYS
+
+rectangle Payments {
+  usecase "Create Checkout Session" as UC1
+  usecase "Calculate Price with Discounts" as UC2
+  usecase "Calculate VAT (23%)" as UC3
+  usecase "Redirect to Stripe" as UC4
+  usecase "Complete Payment" as UC5
+  usecase "Receive Webhook" as UC6
+  usecase "Confirm Order" as UC7
+  usecase "Process Refund" as UC8
+  usecase "Handle Failed Payment" as UC9
+  usecase "Manage Refund Policy" as UC10
+}
+
+S --> UC1
+UC1 --> UC2
+UC1 --> UC3
+UC2 --> UC4
+UC3 --> UC4
+UC4 --> UC5
+UC5 --> UC6
+UC6 --> UC7
+
+SYS --> UC6
+SYS --> UC8
+SYS --> UC9
+
+UC7 --> UC10
+
+note right of UC2
+  Energy cert discount -€100
+  Personalized pricing
+end note
+
+note right of UC3
+  VAT-exclusive display
+  23% Portuguese VAT
+end note
+
+note right of UC10
+  100% if no docs in 5 days
+  50% if work started
+  0% if any doc obtained
+end note
+
+@enduml

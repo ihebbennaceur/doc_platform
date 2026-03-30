@@ -1,0 +1,66 @@
+@startuml DocReady_Sequence
+title DocReady Module - Order Creation Flow
+
+actor Seller
+participant Frontend
+participant StripeAPI
+participant Backend
+participant Database
+participant InngestWorkflow
+participant NotificationService
+
+Seller -> Frontend: Review tier recommendation
+Seller -> Frontend: Click "Encomendar [Tier]"
+Frontend -> Frontend: Redirect to /encomendar
+
+Frontend -> Backend: tRPC orders.createCheckoutSession(tier)
+Backend -> Backend: Calculate price with discounts
+Backend -> Backend: Calculate VAT (23%)
+Backend -> StripeAPI: Create Checkout Session
+
+StripeAPI --> Backend: Return checkoutUrl
+Backend --> Frontend: Return checkoutUrl
+Frontend -> Seller: Redirect to Stripe Checkout
+
+Seller -> StripeAPI: Complete payment
+StripeAPI -> Backend: Webhook: checkout.session.completed
+Backend -> Database: Create FizboOrder (status=created)
+Backend -> Database: Create SellerProfile
+Backend -> Backend: Create auth account (magic link)
+
+Backend -> Frontend: Redirect to onboarding
+Frontend -> Seller: "Upload your Caderneta Predial"
+
+Seller -> Frontend: Upload PDF/image
+Frontend -> Backend: POST caderneta file
+Backend -> Backend: Call OCR service
+
+Backend -> Backend: Extract: artigo_matricial, address, typology, area, VPT
+Backend -> Database: Save extraction results
+Backend -> Frontend: Show extracted data for confirmation
+
+Seller -> Frontend: Confirm or correct fields
+Frontend -> Backend: tRPC orders.onboardProperty(orderId, propertyData)
+
+Backend -> Database: Create Property record
+Backend -> Database: Update FizboOrder (status=active)
+Backend -> InngestWorkflow: Trigger docready/order.created event
+
+InngestWorkflow -> NotificationService: Send ORDER_CREATED notification
+NotificationService --> Seller: Email + WhatsApp sent
+
+Frontend -> Seller: "Documents processing started. View dashboard"
+
+note right of Backend
+  Account created automatically
+  No password form — magic link
+  Property data from OCR
+end note
+
+note right of InngestWorkflow
+  Starts document procurement
+  Schedules Inngest tasks
+  Notifies operator
+end note
+
+@enduml

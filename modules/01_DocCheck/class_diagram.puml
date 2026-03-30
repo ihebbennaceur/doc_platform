@@ -1,0 +1,87 @@
+@startuml DocCheck_ClassDiagram
+title DocCheck Module - Class Diagram
+
+class DocCheckSession {
+  - id: UUID
+  - session_token: String
+  - email: String
+  - answers: JSONB
+  - result: JSONB
+  - tier_recommended: String
+  - converted: Boolean
+  - created_at: Timestamp
+  - expires_at: Timestamp
+  --
+  + create(): DocCheckSession
+  + submit_answers(): void
+  + get_result(): DocCheckResult
+  + expire_session(): void
+}
+
+class DocCheckAnswers {
+  - property_type: Enum
+  - is_condominium: Boolean
+  - building_age: Enum
+  - has_mortgage: Boolean
+  - acquisition_type: Enum
+  - primary_residence: Boolean
+  - energy_cert_valid: Boolean
+  - all_owners_available: Boolean
+  --
+  + validate(): Boolean
+  + to_json(): JSON
+}
+
+class DocumentRequirement {
+  - document_type: Enum
+  - is_required: Boolean
+  - is_conditional: Boolean
+  - validity_months: Integer
+  - cost_estimate: Decimal
+  --
+  + check_validity(): Boolean
+  + get_cost(): Decimal
+}
+
+class DocCheckResult {
+  - session_id: UUID
+  - documents: List<DocumentRequirement>
+  - tier_recommended: ServiceTier
+  - price: Decimal
+  - timeline_days: Integer
+  - risk_flags: List<String>
+  --
+  + calculate_tier(): ServiceTier
+  + calculate_price(): Decimal
+  + identify_risks(): List<String>
+  + generate_pdf(): PDF
+}
+
+class ServiceTier {
+  - name: String
+  - price: Decimal
+  - description: String
+  - timeline_days: Integer
+  - included_documents: List<String>
+  --
+  + get_price_with_discount(has_energy_cert): Decimal
+}
+
+class DocumentType {
+  - CADERNETA_PREDIAL
+  - CERTIDAO_PERMANENTE
+  - LICENCA_UTILIZACAO
+  - FICHA_TECNICA
+  - CERTIFICADO_ENERGETICO
+  - DECLARACAO_CONDOMINIO
+  - DISTRATE_HIPOTECA
+  - HABILITACAO_HERDEIROS
+}
+
+DocCheckSession "1" --> "1" DocCheckAnswers
+DocCheckSession "1" --> "1" DocCheckResult
+DocCheckResult "1" --> "*" DocumentRequirement
+DocumentRequirement "1" --> "1" DocumentType
+DocCheckResult "1" --> "1" ServiceTier
+
+@enduml

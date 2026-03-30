@@ -1,0 +1,107 @@
+@startuml Documents_ClassDiagram
+title Documents Module - Class Diagram
+
+class FizboDocument {
+  - id: UUID
+  - order_id: UUID
+  - property_id: UUID
+  - document_type: Enum
+  - status: Enum (not_required, missing, requested, pending, complete, expiring)
+  - storage_path: String
+  - obtained_at: Timestamp
+  - expiry_date: Date
+  - notes: String
+  - created_at: Timestamp
+  - updated_at: Timestamp
+  --
+  + create(): FizboDocument
+  + request_document(): void
+  + mark_complete(file): void
+  + mark_expiring(): void
+  + check_validity(): Boolean
+  + get_download_url(): String
+  + get_days_to_expiry(): Integer
+}
+
+enum DocumentType {
+  CADERNETA_PREDIAL
+  CERTIDAO_PERMANENTE
+  LICENCA_UTILIZACAO
+  FICHA_TECNICA_HABITACAO
+  CERTIFICADO_ENERGETICO
+  DECLARACAO_CONDOMINIO
+  DISTRATE_HIPOTECA
+  HABILITACAO_HERDEIROS
+  PROCURACAO
+}
+
+enum DocumentStatus {
+  NOT_REQUIRED
+  MISSING
+  REQUESTED
+  PENDING
+  COMPLETE
+  EXPIRING
+}
+
+class DocumentUpload {
+  - id: UUID
+  - document_id: UUID
+  - file_name: String
+  - file_size: Integer
+  - content_type: String
+  - storage_url: String
+  - uploaded_by: UUID (seller_id or null for operator upload)
+  - uploaded_at: Timestamp
+  - verified: Boolean
+  --
+  + upload_file(file): void
+  + verify_document(): Boolean
+  + get_signed_url(expiry_minutes): String
+}
+
+class DocumentValidity {
+  - document_type: DocumentType
+  - validity_months: Integer
+  - requires_renewal: Boolean
+  - obtainable_by: String
+  - cost_estimate: Decimal
+  - processing_days: Integer
+  --
+  + is_valid(date_obtained): Boolean
+  + get_expiry_date(date_obtained): Date
+  + get_renewal_deadline(date_obtained): Date
+}
+
+class DocumentExpiryMonitor {
+  - id: UUID
+  - document_id: UUID
+  - expiry_date: Date
+  - alert_sent_30days: Boolean
+  - alert_sent_7days: Boolean
+  - last_checked: Timestamp
+  --
+  + check_expiry_status(): void
+  + send_expiry_alert(days): void
+  + mark_alert_sent(): void
+}
+
+class StorageManager {
+  - bucket_name: String = "fizbo-documents"
+  - is_private: Boolean = true
+  --
+  + upload_document(file, order_id, doc_type): String
+  + download_document(storage_path): File
+  + generate_signed_url(storage_path, expiry_minutes): String
+  + delete_document(storage_path): void
+  + list_order_documents(order_id): List<String>
+}
+
+FizboDocument "1" --> "1" DocumentType
+FizboDocument "1" --> "1" DocumentStatus
+FizboDocument "1" --> "1" DocumentValidity
+FizboDocument "1" --> "*" DocumentUpload
+FizboDocument "1" --> "1" DocumentExpiryMonitor
+DocumentUpload "many" --> "1" StorageManager
+
+@enduml

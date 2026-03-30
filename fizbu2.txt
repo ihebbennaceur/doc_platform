@@ -1,0 +1,626 @@
+ 
+FIZBO.PT
+Technical Specification
+Stack, data models, APIs, workflows & GDPR
+Technical Spec — For Senior Developer
+v1.0  ·  March 2026  ·  Confidential — FAIRBANK Group
+
+1. Architecture Overview
+Fizbo runs as a standalone Next.js 15 application within the FAIRBANK Group monorepo. It has its own deployment on Vercel, its own domain (fizbo.pt), and its own set of Supabase tables — but shares the group's authentication system, Supabase instance, and property record schema.
+ 
+Key constraint:  Fizbo's team does not own or modify PropCheck's valuation engine or Reserva's matching engine. These are consumed as internal API dependencies. Fizbo calls them; it does not build them.
+
+ 
+FIZBO APPLICATION BOUNDARIES
+
+Fizbo OWNS:
+  apps/fizbo/                  — Next.js 15 app (App Router)
+  services/api/doccheck/       — DocCheck decision tree (FastAPI)
+  services/api/ocr/            — Document OCR pipeline (FastAPI + Mistral)
+  services/api/workflows/      — Inngest workflow definitions
+  supabase/migrations/fizbo/   — Fizbo-specific table migrations
+
+Fizbo CONSUMES (do not modify):
+  packages/auth/               — Shared Supabase auth
+  packages/ui/                 — Shared component library
+  packages/valuation/          — PropCheck AVM (internal API call)
+  packages/notifications/      — Shared Resend + 360dialog
+  property_intelligence schema — Shared property record (read/write)
+  personal_data schema         — Shared user records (read/write)
+
+ 
+
+2. Technology Stack
+Layer
+Technology
+Why / Notes
+Frontend
+Next.js 15 (App Router)
+Server components, ISR for public pages, streaming for dashboard
+Styling
+Tailwind CSS + shadcn/ui
+Uses shared packages/ui components. Do not install separate UI libs.
+API layer (TypeScript)
+tRPC v11 via Next.js API routes
+Type-safe end-to-end. All dashboard data via tRPC. No REST endpoints.
+API layer (Python)
+FastAPI
+DocCheck engine + OCR pipeline. Deployed as separate service on Railway.
+Database
+Supabase (Postgres)
+Shared FAIRBANK instance. EU region. RLS on all personal_data tables.
+Workflow engine
+Inngest
+Durable functions for DocReady order lifecycle. Hosted cloud. Free tier.
+Payments
+Stripe
+Checkout Sessions API. Stripe webhooks for payment confirmation.
+Email
+Resend (via packages/notifications)
+Do not call Resend directly. Use the shared notifications package.
+WhatsApp
+360dialog (via packages/notifications)
+Same — use shared package. €49/mo base. ~€0.05/utility message.
+OCR
+Mistral OCR API
+~$1/1,000 pages. Fallback: manual entry form. No Azure in Phase 1.
+PDF generation
+@react-pdf/renderer
+Server-side. SmartCMA report + DocReady completion certificate.
+Deployment
+Vercel
+fizbo.pt domain. PR preview environments. ISR cache at edge.
+Error monitoring
+Sentry
+Shared Sentry org. Fizbo project. All unhandled exceptions captured.
+
+ 
+⚠️  Note:  n8n, Make, and Zapier are explicitly prohibited. All automation runs through Inngest from the Next.js API layer. Python-only for automation scripts outside of workflows.
+
+ 
+
+3. Database Schema
+Fizbo writes to two Supabase schemas: property_intelligence (property data — no PII) and personal_data (user identity — PII, RLS enforced).
+ 
+3.1  Tables Owned by Fizbo
+property_intelligence.fizbo_orders
+CREATE TABLE property_intelligence.fizbo_orders (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id     UUID REFERENCES property_intelligence.properties(id),
+  seller_id       UUID REFERENCES personal_data.user_profiles(id),
+  tier            TEXT CHECK (tier IN ('standard','premium','express','custom')),
+  status          TEXT CHECK (status IN ('created','active','blocked','complete','cancelled')),
+  stripe_session  TEXT,
+  stripe_payment  TEXT,
+  amount_paid     INTEGER,  -- in cents
+  inngest_run_id  TEXT,
+  energy_cert_present BOOLEAN DEFAULT false,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  completed_at    TIMESTAMPTZ,
+  UNIQUE(property_id, seller_id)  -- one active order per property per seller
+);
+
+ 
+property_intelligence.fizbo_documents
+CREATE TABLE property_intelligence.fizbo_documents (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id        UUID REFERENCES property_intelligence.fizbo_orders(id),
+  property_id     UUID REFERENCES property_intelligence.properties(id),
+  document_type   TEXT CHECK (document_type IN (
+    'caderneta_predial','certidao_permanente','licenca_utilizacao',
+    'ficha_tecnica','cert_energetico','declaracao_condominio',
+    'distrate_hipoteca','habilitacao_herdeiros'
+  )),
+  status          TEXT CHECK (status IN (
+    'not_required','missing','requested','pending','complete','expiring'
+  )) DEFAULT 'missing',
+  storage_path    TEXT,  -- Supabase Storage path (private bucket)
+  obtained_at     TIMESTAMPTZ,
+  expiry_date     DATE,
+  notes           TEXT,  -- operator internal notes
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+
+-- Trigger: updated_at auto-refresh
+CREATE TRIGGER set_fizbo_documents_updated_at
+  BEFORE UPDATE ON property_intelligence.fizbo_documents
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+ 
+personal_data.seller_profiles (Fizbo-specific fields)
+CREATE TABLE personal_data.seller_profiles (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id             UUID REFERENCES personal_data.user_profiles(id),
+  property_id         UUID REFERENCES property_intelligence.properties(id),
+  residency_status    TEXT CHECK (residency_status IN ('resident','non_resident')),
+  ownership_type      TEXT CHECK (ownership_type IN (
+    'sole','joint','inherited','divorce','company'
+  )),
+  mortgage_bank       TEXT,
+  proxy_required      BOOLEAN DEFAULT false,
+  procuracao_url      TEXT,  -- Storage path
+  fiscal_rep_required BOOLEAN DEFAULT false,
+  preferred_language  TEXT DEFAULT 'pt',
+  phone               TEXT,
+  whatsapp_opt_in     BOOLEAN DEFAULT false,
+  created_at          TIMESTAMPTZ DEFAULT now()
+);
+
+-- RLS: user reads/writes only own record
+ALTER TABLE personal_data.seller_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Sellers own records" ON personal_data.seller_profiles
+  USING (auth.uid() = user_id);
+
+ 
+platform_ops.doccheck_sessions
+CREATE TABLE platform_ops.doccheck_sessions (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_token   TEXT UNIQUE,  -- browser session ID
+  email           TEXT,         -- captured on result view
+  answers         JSONB,        -- all 8 question answers
+  result          JSONB,        -- document gap matrix + tier recommendation
+  tier_recommended TEXT,
+  converted       BOOLEAN DEFAULT false,  -- became an order
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  expires_at      TIMESTAMPTZ DEFAULT now() + interval '24 hours'
+);
+
+-- Cleanup cron: delete expired sessions daily
+-- Runs as Inngest scheduled function
+
+ 
+platform_ops.operator_queue
+CREATE TABLE platform_ops.operator_queue (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id        UUID REFERENCES property_intelligence.fizbo_orders(id),
+  task_type       TEXT,  -- e.g. "request_lu", "coordinate_perito"
+  status          TEXT CHECK (status IN ('pending','in_progress','complete','blocked')),
+  assigned_to     UUID,  -- operator user_id
+  priority        INTEGER DEFAULT 5,  -- 1=highest, 10=lowest
+  due_date        DATE,
+  notes           TEXT,
+  created_at      TIMESTAMPTZ DEFAULT now(),
+  updated_at      TIMESTAMPTZ DEFAULT now()
+);
+
+ 
+
+4. API Design
+4.1  tRPC Router Structure
+// apps/fizbo/server/routers/
+
+doccheck.router.ts
+  doccheck.submit(answers: DocCheckAnswers) → DocCheckResult
+  doccheck.getResult(sessionToken: string) → DocCheckResult | null
+
+orders.router.ts
+  orders.createCheckoutSession(tierId: string, propertyData: PropertyData)
+    → { checkoutUrl: string }
+  orders.getOrder(orderId: string) → FizboOrder
+  orders.getMyOrders() → FizboOrder[]
+  orders.onboardProperty(orderId: string, cadernetaFile: File)
+    → { propertyId: string, ocrResult: CadernetaOCR }
+
+documents.router.ts
+  documents.getByOrder(orderId: string) → FizboDocument[]
+  documents.download(documentId: string) → { signedUrl: string }  // 1hr expiry
+
+smartcma.router.ts
+  smartcma.generate(propertyId: string) → SmartCMAReport
+  smartcma.getPdf(propertyId: string) → { pdfUrl: string }
+
+operator.router.ts  [admin only — checks user_type = "admin"]
+  operator.getQueue(filters?: QueueFilters) → OperatorQueueItem[]
+  operator.updateDocumentStatus(docId: string, status: DocStatus, notes?: string)
+  operator.requestSellerAction(orderId: string, actionType: string, message: string)
+  operator.flagBlocked(orderId: string, reason: string, estimatedResolution: Date)
+  operator.completeOrder(orderId: string)
+
+ 
+4.2  FastAPI Endpoints (Python service)
+POST /doccheck/evaluate
+  Body: { answers: DocCheckAnswers }
+  Returns: { documents: DocumentRequirement[], tier: Tier, riskFlags: RiskFlag[] }
+
+POST /ocr/caderneta
+  Body: multipart/form-data { file: File }
+  Returns: { artigo_matricial, address, municipality, typology, area, vpt }
+  Timeout: 30s. On timeout: return { success: false, requiresManualEntry: true }
+
+POST /ocr/verify-document
+  Body: { file: File, documentType: string }
+  Returns: { isValid: boolean, extractedData: object, confidence: number }
+
+POST /smartcma/generate
+  Body: { propertyId: string, sellerId: string }
+  Returns: SmartCMAReport (calls packages/valuation internally)
+  Timeout: 60s
+
+ 
+4.3  Stripe Webhook Events to Handle
+checkout.session.completed
+  → Update fizbo_orders.status = "active"
+  → Update fizbo_orders.stripe_payment = event.payment_intent
+  → Emit Inngest event: "docready/order.created" { orderId, tier, sellerId }
+  → Send ORDER_CREATED notification to seller
+
+payment_intent.payment_failed
+  → Update fizbo_orders.status = "cancelled"
+  → Send failure email to seller
+
+charge.refunded
+  → Update fizbo_orders.status = "cancelled"
+  → Send refund confirmation email
+
+ 
+
+5. Inngest Workflow Definitions
+5.1  DocReady Standard Workflow
+export const docreadyStandard = inngest.createFunction(
+  { id: "docready-standard", retries: 3 },
+  { event: "docready/order.created" },
+  async ({ event, step }) => {
+    const { orderId, tier, sellerId, propertyId } = event.data
+
+    // Step 1: Generate document checklist (automated — DocCheck engine)
+    const requirements = await step.run("generate-checklist", async () => {
+      const result = await doccheckEngine(propertyId)
+      await supabase.from("fizbo_documents").insert(
+        result.documents.map(d => ({ order_id: orderId, property_id: propertyId, document_type: d.type, status: "missing" }))
+      )
+      return result
+    })
+
+    // Step 2: Notify operator (human-in-the-loop begins)
+    await step.run("notify-operator", async () => {
+      await supabase.from("platform_ops.operator_queue").insert({
+        order_id: orderId, task_type: "process_order", status: "pending", priority: tierToPriority(tier)
+      })
+      await notifyOperator({ orderId, requirements })
+    })
+
+    // Step 3: Wait for each document (timeout: 30 days per document)
+    for (const doc of requirements.documents) {
+      await step.waitForEvent(`doc-complete-${orderId}-${doc.type}`, {
+        event: "document/status.updated",
+        if: `async.data.documentId == "${doc.id}" && async.data.status == "complete"`,
+        timeout: "30d",
+      })
+    }
+
+    // Step 4: Generate SmartCMA and complete order
+    await step.run("complete-order", async () => {
+      await generateSmartCMA(propertyId, sellerId)
+      await supabase.from("fizbo_orders")
+        .update({ status: "complete", completed_at: new Date() })
+        .eq("id", orderId)
+      await notifySeller(sellerId, "ORDER_COMPLETE")
+    })
+  }
+)
+
+// Operator triggers document completion:
+export async function markDocumentComplete(documentId: string) {
+  await supabase.from("fizbo_documents")
+    .update({ status: "complete", obtained_at: new Date() })
+    .eq("id", documentId)
+  // This fires the Inngest waitForEvent above
+  await inngest.send({
+    name: "document/status.updated",
+    data: { documentId, status: "complete" }
+  })
+  await notifySeller(sellerId, "DOCUMENT_COMPLETE")
+}
+
+ 
+5.2  Document Expiry Cron
+// Runs daily at 08:00 Lisbon time
+export const docExpiryCron = inngest.createFunction(
+  { id: "doc-expiry-check" },
+  { cron: "0 8 * * *" },
+  async ({ step }) => {
+    // Check for documents expiring in 30 days
+    const expiring30 = await step.run("check-30-day", async () => {
+      return supabase.from("fizbo_documents")
+        .select("*, fizbo_orders(seller_id)")
+        .lte("expiry_date", addDays(new Date(), 30))
+        .gte("expiry_date", addDays(new Date(), 28))
+        .eq("status", "complete")
+    })
+    for (const doc of expiring30.data) {
+      await notifySeller(doc.fizbo_orders.seller_id, "DOCUMENT_EXPIRING_30_DAYS", { docType: doc.document_type })
+    }
+    // Same pattern for 7-day expiry (DOCUMENT_EXPIRING_7_DAYS)
+  }
+)
+
+ 
+
+6. DocCheck Engine (Python)
+# services/api/doccheck/engine.py
+
+from dataclasses import dataclass
+from enum import Enum
+
+class DocumentType(str, Enum):
+    CADERNETA = "caderneta_predial"
+    CERTIDAO = "certidao_permanente"
+    LICENCA = "licenca_utilizacao"
+    FICHA_TECNICA = "ficha_tecnica"
+    CERT_ENERGETICO = "cert_energetico"
+    DECLARACAO_CONDO = "declaracao_condominio"
+    DISTRATE = "distrate_hipoteca"
+    HABILITACAO = "habilitacao_herdeiros"
+
+@dataclass
+class DocCheckAnswers:
+    property_type: str           # apartamento|moradia|terreno|outro
+    has_condominium: str         # yes|no|unsure
+    construction_era: str        # pre1951|1951_1990|1991_2007|post2007
+    has_mortgage: bool
+    acquisition_type: str        # purchase|inheritance|divorce|gift|other
+    is_primary_residence: str    # yes|no_rented|no_vacant
+    has_energy_cert: str         # yes|no|unknown
+    all_owners_available: str    # yes|one_abroad|one_deceased|disputed
+
+def evaluate(answers: DocCheckAnswers) -> DocCheckResult:
+    docs = []
+
+    # Always required
+    docs.append({"type": DocumentType.CADERNETA, "required": True})
+    docs.append({"type": DocumentType.CERTIDAO, "required": True})
+
+    # Conditional on construction era
+    if answers.construction_era != "pre1951":
+        docs.append({"type": DocumentType.LICENCA, "required": True})
+    if answers.construction_era == "post2007":
+        docs.append({"type": DocumentType.FICHA_TECNICA, "required": True})
+
+    # Energy certificate
+    if answers.has_energy_cert != "yes":
+        docs.append({"type": DocumentType.CERT_ENERGETICO, "required": True})
+
+    # Condominium declaration
+    if answers.has_condominium == "yes":
+        docs.append({"type": DocumentType.DECLARACAO_CONDO, "required": True})
+
+    # Mortgage discharge
+    if answers.has_mortgage:
+        docs.append({"type": DocumentType.DISTRATE, "required": True})
+
+    # Inheritance
+    if answers.acquisition_type == "inheritance" and answers.all_owners_available != "yes":
+        docs.append({"type": DocumentType.HABILITACAO, "required": True, "is_prerequisite": True})
+
+    # Determine tier
+    required_count = sum(1 for d in docs if d["required"])
+    has_prerequisite = any(d.get("is_prerequisite") for d in docs)
+
+    if required_count <= 2 and not has_prerequisite:
+        tier = "standard"
+    elif required_count >= 3 or has_prerequisite:
+        tier = "premium"
+    if answers.all_owners_available == "disputed" or answers.acquisition_type == "divorce":
+        tier = "express"
+
+    risk_flags = build_risk_flags(answers)
+
+    return DocCheckResult(documents=docs, recommended_tier=tier, risk_flags=risk_flags)
+
+ 
+
+7. OCR Pipeline
+7.1  Caderneta Predial OCR Flow
+# services/api/ocr/caderneta.py
+
+async def process_caderneta(file_bytes: bytes, content_type: str) -> CadernetaResult:
+    # Step 1: Call Mistral OCR
+    import base64
+    b64 = base64.b64encode(file_bytes).decode()
+    response = await mistral_client.chat.complete(
+        model="mistral-ocr-latest",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{b64}"}},
+                {"type": "text", "text": CADERNETA_EXTRACTION_PROMPT}
+            ]
+        }]
+    )
+
+    # Step 2: Parse structured fields
+    raw_text = response.choices[0].message.content
+    extracted = parse_caderneta_fields(raw_text)
+
+    # Step 3: Validate critical fields
+    if not extracted.artigo_matricial or not extracted.municipality:
+        raise OCRExtractionError("Critical fields missing")
+
+    return extracted
+
+CADERNETA_EXTRACTION_PROMPT = """
+Extract the following fields from this Portuguese Caderneta Predial Urbana.
+Return ONLY a JSON object with these exact keys:
+{"artigo_matricial": "", "address": "", "parish": "", "municipality": "",
+ "typology": "", "gross_area": 0, "vpt": 0, "owner_name": ""}
+If a field is not visible, use null. Do not include any other text.
+"""
+
+ 
+7.2  OCR Fallback
+If OCR confidence is below threshold OR the API call times out (30s), show manual entry form with pre-filled fields from partial extraction.
+// apps/fizbo/app/onboarding/page.tsx
+// After OCR API call:
+
+if (!ocrResult.success || ocrResult.confidence < 0.7) {
+  return <ManualEntryForm prefill={ocrResult.partialData} />;
+  // ManualEntryForm collects: artigo_matricial, municipality, typology, gross_area
+  // These 4 fields are minimum required to create a property record
+}
+
+ 
+
+8. Authentication & Authorisation
+// User types in FAIRBANK platform
+type UserType = "buyer" | "seller" | "agent" | "inspector" | "admin"
+
+// Fizbo uses: seller + admin
+
+// Route protection in Next.js middleware
+// apps/fizbo/middleware.ts
+
+export async function middleware(request: NextRequest) {
+  const { session, profile } = await getSession()
+
+  // Public routes — no auth required
+  const publicPaths = ["/", "/verificar", "/encomendar", "/precos", "/en/*"]
+  if (publicPaths.some(p => request.nextUrl.pathname.startsWith(p))) return
+
+  // Auth required for /dashboard/*
+  if (!session) return NextResponse.redirect(new URL("/login", request.url))
+
+  // Admin required for /admin/*
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    if (profile?.user_type !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+  }
+}
+
+// Account creation: triggered by Stripe webhook (checkout.session.completed)
+// NOT by user sign-up form. User sets password via email magic link sent post-payment.
+
+ 
+8.1  GDPR Implementation
+NIF stored encrypted: INSERT INTO personal_data.user_profiles ... WITH nif = pgp_sym_encrypt($1, $2)
+Document files: Supabase Storage private bucket "fizbo-documents". All access via signed URLs (1hr expiry).
+Right-to-deletion: DELETE /api/gdpr/delete — removes all personal_data records, Storage files, and sets order records to anonymised state.
+Data export: GET /api/gdpr/export — returns ZIP of all personal data for a user.
+ 
+8.2  RLS Policies Summary
+-- personal_data.seller_profiles
+SELECT: auth.uid() = user_id
+INSERT: auth.uid() = user_id
+UPDATE: auth.uid() = user_id
+
+-- property_intelligence.fizbo_orders
+SELECT: auth.uid() = seller_id OR user_type = "admin"
+UPDATE: user_type = "admin" only
+
+-- property_intelligence.fizbo_documents
+SELECT: via order join (seller_id = auth.uid()) OR user_type = "admin"
+UPDATE: user_type = "admin" only
+
+-- platform_ops.operator_queue
+ALL operations: user_type = "admin" only
+
+ 
+
+9. File Structure
+apps/fizbo/
+├── app/
+│   ├── (public)/           # No auth required
+│   │   ├── page.tsx        # Homepage
+│   │   ├── verificar/      # DocCheck tool
+│   │   ├── encomendar/     # Order flow + tier selection
+│   │   ├── precos/         # Pricing page
+│   │   └── [lang]/         # /en/* English versions
+│   ├── (auth)/             # Auth required
+│   │   ├── dashboard/      # Seller dashboard
+│   │   │   ├── page.tsx    # Overview + document tracker
+│   │   │   ├── documentos/ # Document detail + download
+│   │   │   └── relatorio/  # SmartCMA report view
+│   │   └── onboarding/     # Post-payment property setup
+│   ├── admin/              # Admin/operator (user_type = admin)
+│   │   ├── queue/          # Operator order queue
+│   │   └── orders/[id]/    # Order detail + management
+│   └── api/
+│       ├── trpc/[trpc]/    # tRPC handler
+│       ├── stripe/webhook/ # Stripe webhook endpoint
+│       └── inngest/        # Inngest function handler
+├── server/
+│   ├── routers/            # tRPC routers (doccheck, orders, documents, smartcma, operator)
+│   └── context.ts          # tRPC context (Supabase session)
+├── components/             # Fizbo-specific components (use packages/ui for base)
+│   ├── doccheck/           # DocCheck step components
+│   ├── dashboard/          # Dashboard widgets (DocTracker, SmartCMA, etc.)
+│   └── operator/           # Operator queue components
+└── lib/
+    ├── stripe.ts           # Stripe client
+    └── inngest.ts          # Inngest client + workflow imports
+
+services/api/
+├── doccheck/               # Python: DocCheck evaluation engine
+├── ocr/                    # Python: Mistral OCR + field extraction
+├── smartcma/               # Python: SmartCMA generator (calls valuation engine)
+└── workflows/              # Inngest function definitions
+
+ 
+9.1  Environment Variables
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=    # Server-side only. Never expose to client.
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+
+# Stripe Price IDs (set in Stripe Dashboard)
+STRIPE_PRICE_STANDARD=
+STRIPE_PRICE_PREMIUM=
+STRIPE_PRICE_EXPRESS=
+
+# Inngest
+INNGEST_EVENT_KEY=
+INNGEST_SIGNING_KEY=
+
+# FastAPI (Python service URL)
+PYTHON_API_URL=              # e.g. https://fizbo-api.railway.app
+PYTHON_API_SECRET=           # Shared secret for service-to-service auth
+
+# Resend (via packages/notifications)
+RESEND_API_KEY=
+
+# 360dialog WhatsApp
+WHATSAPP_API_KEY=
+
+# Encryption (for NIF)
+PG_CRYPTO_KEY=               # 32-char random string. Store in Supabase vault.
+
+# Sentry
+SENTRY_DSN=
+
+ 
+9.2  Infrastructure Monthly Cost (Fizbo share)
+Service
+Monthly cost
+Notes
+Supabase Pro (group share)
+€8–€25
+Fizbo share of group instance
+Vercel Pro
+€4
+1 of 5 group apps
+Inngest
+€0–€10
+Free tier covers Phase 1 volume
+Resend
+€4
+Pro plan group share
+360dialog WhatsApp
+€49–€80
+Primary Fizbo cost at launch
+Mistral OCR
+€1–€5
+~40–50 orders/mo × 3–4 docs
+Railway (Python API)
+€5–€15
+FastAPI service hosting
+Total
+€71–€139/mo
+At MVP volume (40 orders/mo)
+
+

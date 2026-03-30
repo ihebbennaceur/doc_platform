@@ -1,0 +1,107 @@
+@startuml Payments_Sequence
+title Payments Module - Payment Processing Flow
+
+actor Seller
+participant Frontend
+participant Backend
+participant StripeAPI
+participant Database
+participant StripeWebhookEndpoint
+participant NotificationService
+
+Seller -> Frontend: Select tier from pricing page
+Frontend -> Backend: tRPC orders.createCheckoutSession(tierId, propertyData)
+
+Backend -> Backend: Calculate base price for tier
+Backend -> Backend: Check DocCheck result for energy cert discount
+alt Has Valid Energy Certificate
+  Backend -> Backend: Apply -€100 discount
+  Backend -> Backend: price = base_price - 100
+else No Energy Certificate
+  Backend -> Backend: price = base_price
+end
+
+Backend -> Backend: Calculate VAT: vat = price × 0.23
+Backend -> Backend: total = price + vat
+
+Backend -> Database: Create PaymentSession (status=pending)
+Database --> Backend: Return payment_session_id
+
+Backend -> StripeAPI: POST /checkout/sessions
+StripeAPI -> Backend: Return session {id, url}
+
+Backend -> Database: Update PaymentSession.stripe_session_id
+Backend --> Frontend: Return {checkoutUrl, priceBreakdown}
+
+Frontend -> Seller: Display price breakdown (base + discount + VAT + total)
+Seller -> Frontend: Click "Proceder ao pagamento"
+
+Frontend -> StripeAPI: Redirect to Stripe Checkout
+Seller -> StripeAPI: Enter card details
+Seller -> StripeAPI: Complete payment
+
+StripeAPI -> StripeAPI: Process payment
+StripeAPI -> StripeAPI: Confirm charge
+
+StripeAPI -> StripeWebhookEndpoint: POST webhook (checkout.session.completed)
+StripeWebhookEndpoint -> StripeWebhookEndpoint: Verify signature (STRIPE_WEBHOOK_SECRET)
+
+StripeWebhookEndpoint -> Backend: Handle event
+Backend -> Database: Query PaymentSession by stripe_session_id
+Database --> Backend: Return PaymentSession
+
+Backend -> Database: Update PaymentSession.status = "completed"
+Backend -> Database: Update PaymentSession.stripe_payment_intent_id
+
+Backend -> Database: Create FizboOrder (status=created)
+Backend -> Database: Create SellerProfile + Property record
+
+Backend -> Backend: Create auth account
+Backend -> Backend: Send magic link email
+
+Backend -> NotificationService: Send ORDER_CREATED notification
+NotificationService --> Seller: Email + WhatsApp: "Order received"
+
+Backend --> StripeAPI: Acknowledge webhook (200 OK)
+
+Seller -> Frontend: Redirect from Stripe
+Frontend -> Backend: Check payment status
+Backend -> Database: Query FizboOrder.status
+Database --> Backend: Return "created"
+
+Frontend -> Seller: Show onboarding page: "Upload Caderneta"
+
+== Refund Scenario ==
+alt Refund Request
+  Seller -> Operator: Request refund
+  Operator -> Backend: tRPC operator.processRefund(orderId, reason)
+  
+  Backend -> Database: Query FizboOrder + documents
+  Backend -> Backend: Evaluate refund eligibility
+  
+  Backend -> StripeAPI: POST /refunds {payment_intent_id, amount}
+  StripeAPI -> StripeAPI: Process refund
+  StripeAPI --> Backend: Return {refund_id, status}
+  
+  Backend -> Database: Create PaymentRefund record
+  Backend -> Database: Update PaymentSession.status = "refunded"
+  
+  Backend -> NotificationService: Send refund notification
+  NotificationService --> Seller: Email: "Refund processed: €XXX"
+end
+
+note right of Backend
+  Price calculation:
+  Base tier price (€399/€899/€1499)
+  - Energy cert discount (€100)
+  = Subtotal
+  × 1.23 (VAT inclusive display)
+end note
+
+note right of StripeWebhookEndpoint
+  Always verify signature
+  Idempotent processing
+  Retry on failure
+end note
+
+@enduml

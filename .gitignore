@@ -1,0 +1,140 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+*.pyc
+
+# Virtual environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+backend_django/backend_seller_platform/.venv/
+django/doccheck_service/.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.sublime-project
+.sublime-workspace
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node/NPM (Frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+.pnp
+.pnp.js
+
+# Frontend builds
+frontend_seller_platform/.next/
+frontend_seller_platform/out/
+frontend_seller_platform/build/
+frontend_seller_platform/.turbo/
+frontend_seller_platform/dist/
+
+# OS
+Thumbs.db
+*.DS_Store
+.directory
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+*~
+.tmp
+.cache
+
+# CI/CD
+.github/workflows/local
+
+# Vercel
+.vercel/
+.vercelignore
+
+# OS-specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local development
+local_dev.md
+TODO.md
+
+# Sensitive
+secrets.json
+.aws/
+.gcloud/
+
+# Build outputs
+dist/
+build/
+*.tar.gz
+
+# Uploads
+media/documents/
+media/cases/
+uploads/
+
+# Migrations (only exclude in some cases)
+# Keep migrations in git unless they're huge
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.env.test
+.env.production
+
+# Vercel CLI
+.vercel
+
+# Keep these important files
+!.gitkeep
+!.env.example
+!.github/

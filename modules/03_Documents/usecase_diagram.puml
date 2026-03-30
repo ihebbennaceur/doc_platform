@@ -1,0 +1,57 @@
+@startuml Documents_UseCase
+title Documents Module - Use Case Diagram
+
+left to right direction
+
+actor Seller as S
+actor Operator as O
+actor System as SYS
+
+rectangle Documents {
+  usecase "Upload Document" as UC1
+  usecase "Verify Document" as UC2
+  usecase "Store in Secure Cloud" as UC3
+  usecase "Track Document Status" as UC4
+  usecase "Check Expiry" as UC5
+  usecase "Download Document" as UC6
+  usecase "Generate Signed URL" as UC7
+  usecase "Request Document" as UC8
+  usecase "Update Status" as UC9
+  usecase "Monitor Expiration" as UC10
+}
+
+S --> UC1
+S --> UC4
+S --> UC6
+O --> UC8
+O --> UC9
+O --> UC10
+
+UC1 --> UC2
+UC2 --> UC3
+UC3 --> UC4
+UC4 --> UC5
+UC6 --> UC7
+
+SYS --> UC5
+SYS --> UC10
+
+note right of UC3
+  Supabase Storage
+  Private bucket
+  Private access
+end note
+
+note right of UC7
+  1-hour expiry
+  Signed URLs
+  No public URLs
+end note
+
+note right of UC10
+  Daily cron
+  30-day warning
+  7-day critical alert
+end note
+
+@enduml

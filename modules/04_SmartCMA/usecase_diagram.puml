@@ -1,0 +1,56 @@
+@startuml SmartCMA_UseCase
+title SmartCMA Module - Use Case Diagram
+
+left to right direction
+
+actor Seller as S
+actor System as SYS
+
+rectangle SmartCMA {
+  usecase "Trigger Report Generation" as UC1
+  usecase "Query Valuation Engine" as UC2
+  usecase "Fetch Comparable Properties" as UC3
+  usecase "Analyze Market Data" as UC4
+  usecase "Calculate Price Band" as UC5
+  usecase "Identify Buyer Pool" as UC6
+  usecase "Generate PDF Report" as UC7
+  usecase "View Price Report" as UC8
+  usecase "Download PDF" as UC9
+  usecase "Activate Off-Market Listing" as UC10
+}
+
+S --> UC8
+UC8 --> UC9
+UC8 --> UC10
+
+SYS --> UC1
+UC1 --> UC2
+UC2 --> UC3
+UC3 --> UC4
+UC4 --> UC5
+UC4 --> UC6
+UC5 --> UC7
+UC7 --> UC8
+
+note right of UC2
+  PropCheck AVM
+  Internal API call
+end note
+
+note right of UC5
+  Low / Mid / High
+  Confidence score
+end note
+
+note right of UC6
+  Rounded to nearest 5
+  Reserva platform data
+end note
+
+note right of UC7
+  React PDF
+  Server-side rendering
+  < 60 seconds
+end note
+
+@enduml
