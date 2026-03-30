@@ -20,9 +20,15 @@ export const useFetch = () => {
       ...(options.headers as Record<string, string> || {}),
     };
 
+    // Get token from context OR localStorage as fallback
+    const token = accessToken || localStorage.getItem('access_token');
+    
     // Add authorization header if token exists
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      console.log('[useFetch] Using token for request:', url);
+    } else {
+      console.warn('[useFetch] No token available for request:', url);
     }
 
     let response = await fetch(url, {
@@ -30,8 +36,8 @@ export const useFetch = () => {
       headers,
     });
 
-    // If 401 and we have a refresh token, try to refresh and retry
-    if (response.status === 401 && accessToken) {
+    // If 401 and we have a token, try to refresh and retry
+    if (response.status === 401 && token) {
       console.log('[useFetch] Token expired, attempting to refresh...');
       const refreshed = await refreshAccessToken();
 
@@ -39,13 +45,15 @@ export const useFetch = () => {
         console.log('[useFetch] Token refreshed, retrying request...');
         // Get the new token from localStorage (it was updated by refreshAccessToken)
         const newToken = localStorage.getItem('access_token');
-        headers['Authorization'] = `Bearer ${newToken}`;
+        if (newToken) {
+          headers['Authorization'] = `Bearer ${newToken}`;
 
-        // Retry the request with new token
-        response = await fetch(url, {
-          ...options,
-          headers,
-        });
+          // Retry the request with new token
+          response = await fetch(url, {
+            ...options,
+            headers,
+          });
+        }
       }
     }
 
