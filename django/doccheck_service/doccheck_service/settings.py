@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = BASE_DIR / '.env'
@@ -60,16 +61,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'doccheck_service.wsgi.application'
 ASGI_APPLICATION = 'doccheck_service.asgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.getenv('DJANGO_DB_NAME', BASE_DIR / 'db.sqlite3'),
-        'USER': os.getenv('DJANGO_DB_USER', ''),
-        'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', ''),
-        'HOST': os.getenv('DJANGO_DB_HOST', ''),
-        'PORT': os.getenv('DJANGO_DB_PORT', ''),
+# Database configuration
+# Support both SQLite (development) and PostgreSQL (production via DATABASE_URL)
+if os.getenv('DATABASE_URL'):
+    # Production: Use PostgreSQL with DATABASE_URL (Supabase)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.getenv('DATABASE_URL'),
+            conn_max_age=600
+        )
     }
-}
+else:
+    # Development: Use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DJANGO_DB_ENGINE', 'django.db.backends.sqlite3'),
+            'NAME': os.getenv('DJANGO_DB_NAME', BASE_DIR / 'db.sqlite3'),
+            'USER': os.getenv('DJANGO_DB_USER', ''),
+            'PASSWORD': os.getenv('DJANGO_DB_PASSWORD', ''),
+            'HOST': os.getenv('DJANGO_DB_HOST', ''),
+            'PORT': os.getenv('DJANGO_DB_PORT', ''),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
