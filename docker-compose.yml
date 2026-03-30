@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # Main Backend API
+  backend:
+    build:
+      context: ./backend_django/backend_seller_platform
+      dockerfile: Dockerfile
+    container_name: pfe-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,backend
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=doc-check-iheb
+      - AWS_S3_REGION_NAME=eu-west-1
+    volumes:
+      - ./backend_django/backend_seller_platform:/app
+      - backend-media:/app/media
+    networks:
+      - pfe-network
+    depends_on:
+      - db
+
+  # DocCheck Service (Backend 2)
+  doccheck:
+    build:
+      context: ./django/doccheck_service
+      dockerfile: Dockerfile
+    container_name: pfe-doccheck
+    ports:
+      - "8001:8001"
+    environment:
+      - DEBUG=false
+      - SECRET_KEY=django-insecure-dev-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,doccheck
+      - DATABASE_URL=sqlite:///db.sqlite3
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://frontend:3000
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_STORAGE_BUCKET_NAME=doc-check-iheb
+      - AWS_S3_REGION_NAME=eu-west-1
+    volumes:
+      - ./django/doccheck_service:/app
+      - doccheck-media:/app/media
+    networks:
+      - pfe-network
+
+  # PostgreSQL Database (optional - for production)
+  db:
+    image: postgres:15-alpine
+    container_name: pfe-postgres
+    environment:
+      - POSTGRES_DB=pfe_platform
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - pfe-network
+    ports:
+      - "5432:5432"
+
+volumes:
+  backend-media:
+  doccheck-media:
+  postgres-data:
+
+networks:
+  pfe-network:
+    driver: bridge
