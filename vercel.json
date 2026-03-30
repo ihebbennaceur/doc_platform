@@ -1,0 +1,10 @@
+{
+  "buildCommand": "cd frontend_seller_platform && npm run build",
+  "installCommand": "cd frontend_seller_platform && npm install",
+  "outputDirectory": "frontend_seller_platform/.next",
+  "rootDirectory": ".",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@next_public_api_url",
+    "NEXT_PUBLIC_APP_NAME": "@next_public_app_name"
+  }
+}
