@@ -1,6 +1,6 @@
 {
   "name": "seller-platform-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Frontend for seller platform built with Next.js",
   "scripts": {
     "dev": "next dev",
