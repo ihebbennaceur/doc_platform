@@ -1,0 +1,1 @@
+web: cd backend_django/backend_seller_platform/myproject && gunicorn myproject.wsgi:application --bind 0.0.0.0:8080 --workers 3 --timeout 120
