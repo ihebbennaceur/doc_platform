@@ -23,5 +23,8 @@ WORKDIR /app/myproject
 # Expose port 8000
 EXPOSE 8000
 
-# Run migrations and start gunicorn
-CMD ["sh", "-c", "python manage.py migrate && gunicorn myproject.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"]
+# Create entrypoint script
+RUN echo '#!/bin/bash\nset -e\necho "Running migrations..."\npython manage.py migrate\necho "Starting gunicorn..."\ngunicorn myproject.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+# Run entrypoint
+CMD ["/app/entrypoint.sh"]
