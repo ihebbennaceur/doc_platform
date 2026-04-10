@@ -203,16 +203,49 @@ REST_FRAMEWORK = {
 # Spectacular/Swagger Configuration
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Seller Platform API',
-    'DESCRIPTION': 'A seller-focused real estate platform backend API',
+    'DESCRIPTION': 'A comprehensive seller-focused real estate platform backend API with document processing, payments, and CMA analysis',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'CONTACT': {
         'name': 'API Support',
         'email': 'support@sellerplatform.com',
+        'url': 'https://sellerplatform.com/support',
     },
     'LICENSE': {
-        'name': 'BSD License',
+        'name': 'Proprietary License',
     },
+    'SERVERS': [
+        {
+            'url': 'https://api.sellerplatform.com',
+            'description': 'Production server',
+        },
+        {
+            'url': 'http://localhost:8000',
+            'description': 'Local development server',
+        },
+    ],
+    'AUTHENTICATION_FLOWS': {
+        'JWT': {
+            'type': 'http',
+            'scheme': 'bearer',
+        },
+    },
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'PREPROCESSING_HOOKS': [
+        'drf_spectacular.openapi.AutoSchema.preprocessing_filter_hook',
+    ],
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.openapi.AutoSchema.postprocessing_filter_hook',
+    ],
+    'ENUM_FIELD_MAPPING': {
+        'rest_framework.serializers.ChoiceField': 'api.enums.enum_to_model',
+    },
+    'EXPAND_PATH_PARAMETERS': True,
+    'DEEP_PAGINATION_PAGINATION_CLASS_WHITELIST': [
+        'rest_framework.pagination.PageNumberPagination',
+        'rest_framework.pagination.LimitOffsetPagination',
+        'rest_framework.pagination.CursorPagination',
+    ],
 }
 
 # JWT Configuration
