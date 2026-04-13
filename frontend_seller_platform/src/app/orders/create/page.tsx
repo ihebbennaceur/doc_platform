@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BRAND_COLORS, SPACING, BORDER_RADIUS, FONT_SIZES } from '@/shared/theme/colors';
@@ -9,6 +9,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { useFetch } from '@/shared/hooks/useFetch';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { buildApiUrl } from '@/lib/api-url';
 
 interface ServiceTier {
   id: string;
@@ -50,7 +51,7 @@ const SERVICE_TIERS: ServiceTier[] = [
   },
 ];
 
-export default function CreateOrderPage() {
+function CreateOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
@@ -78,7 +79,7 @@ export default function CreateOrderPage() {
     setError('');
 
     try {
-      const response = await fetchWithAuth('http://localhost:8000/api/orders/', {
+      const response = await fetchWithAuth(buildApiUrl('/orders/'), {
         method: 'POST',
         body: JSON.stringify({
           service_tier: selectedTier,
@@ -296,5 +297,13 @@ export default function CreateOrderPage() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function CreateOrderPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateOrderContent />
+    </Suspense>
   );
 }

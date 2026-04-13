@@ -16,11 +16,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Make init script executable
+RUN chmod +x init.sh
+
 # Create necessary directories
 RUN mkdir -p staticfiles media
 
-EXPOSE 8000
+# Expose port 8080 (Railway default)
+EXPOSE 8080
 
 # Set working directory and run gunicorn from the correct location
 WORKDIR /app/myproject
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "3", "--timeout", "120"]

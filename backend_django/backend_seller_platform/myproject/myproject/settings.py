@@ -54,7 +54,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:8080',
+    'https://docfrontend-beta.vercel.app',  # Frontend production
 ]
+CORS_ALLOW_ORIGINS_REGEX = r'^https://.*\.vercel\.app$'
 CORS_ALLOW_METHODS = [
     'GET',
     'POST',
@@ -94,8 +96,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-      'corsheaders.middleware.CorsMiddleware',  
+    'corsheaders.middleware.CorsMiddleware',  
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -305,3 +308,6 @@ else:
     STATIC_URL = '/static/'
     STATICFILES_DIRS = [BASE_DIR / 'static']
     STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise Configuration for serving static files in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
