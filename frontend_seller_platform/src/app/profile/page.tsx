@@ -72,22 +72,32 @@ export default function ProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetchWithAuth(buildApiUrl('/accounts/me/'), {
+      const url = buildApiUrl('/accounts/me/');
+      console.log('[Profile] Saving to URL:', url);
+      console.log('[Profile] Form data:', formData);
+      
+      const res = await fetchWithAuth(url, {
         method: 'PATCH',
         body: JSON.stringify(formData),
       });
+      
+      console.log('[Profile] Response status:', res.status);
+      console.log('[Profile] Response headers:', res.headers);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('[Profile] Save successful:', data);
         setProfile(data);
         setEditing(false);
         alert('Profile updated successfully');
       } else {
-        const errorData = await res.json();
-        console.error('Save error:', errorData);
-        alert(`Failed to update profile: ${JSON.stringify(errorData)}`);
+        console.error('[Profile] Save failed with status:', res.status);
+        const errorData = await res.json().catch(() => ({ error: 'Could not parse error response' }));
+        console.error('[Profile] Error response:', errorData);
+        alert(`Failed to update profile (${res.status}): ${JSON.stringify(errorData)}`);
       }
     } catch (err) {
-      console.error('Failed to update profile:', err);
+      console.error('[Profile] Exception during save:', err);
       alert('Failed to update profile: ' + String(err));
     } finally {
       setSaving(false);
