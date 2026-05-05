@@ -130,7 +130,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at"
         ]
-        read_only_fields = ["id", "username", "created_at", "updated_at"]
+        read_only_fields = ["id", "username", "role", "email_verified", "created_at", "updated_at"]
     
     def get_full_name(self, obj):
         """Return full name or N/A if empty"""
@@ -141,6 +141,14 @@ class UserDetailSerializer(serializers.ModelSerializer):
         elif obj.last_name:
             return obj.last_name
         return None
+    
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get('email', instance.email)
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.phone = validated_data.get('phone', instance.phone)
+        instance.save()
+        return instance
 
 
 class AdminUserManagementSerializer(serializers.ModelSerializer):
