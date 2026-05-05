@@ -30,16 +30,25 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def current_user(request):
-    """Get current authenticated user details"""
-    from .serializers import UserDetailSerializer
-    serializer = UserDetailSerializer(request.user)
-    return Response(serializer.data)
+class IsAdmin(IsAdminUser):
     """Custom permission to check if user is admin role"""
     def has_permission(self, request, view):
         return bool(request.user and request.user.role == User.Role.ADMIN)
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """Get or update current authenticated user details"""
+    if request.method == 'GET':
+        serializer = UserDetailSerializer(request.user)
+        return Response(serializer.data)
+    elif request.method == 'PATCH':
+        serializer = UserDetailSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RegisterView(CreateAPIView):
