@@ -14,6 +14,7 @@ from .views import (
     UserDocumentsView,
     AdminDocumentListView,
     AdminDocumentApprovalView,
+    analyze_document_pdf,
     seller_profile,
     agent_profile,
     lawyer_profile,
@@ -36,6 +37,7 @@ urlpatterns = [
     path("documents/", UserDocumentsView.as_view(), name="user_documents"),
     path("documents/<int:document_id>/", DocumentDetailView.as_view(), name="document_detail"),
     path("documents/<int:document_id>/extract/", DocumentExtractionView.as_view(), name="document_extraction"),
+    path("documents/<int:document_id>/analyze/", analyze_document_pdf, name="analyze_pdf"),  # AI PDF analysis
     
     # Profile endpoints (with decorators)
     path("profiles/seller/", seller_profile, name="seller_profile"),

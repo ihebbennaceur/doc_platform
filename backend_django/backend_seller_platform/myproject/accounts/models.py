@@ -132,6 +132,8 @@ class Document(models.Model):
 
     extracted_fields = models.JSONField(default=dict, blank=True, null=True)
 
+    analysis_result = models.JSONField(default=dict, blank=True, null=True)  # AI analysis results (text extraction, type detection, etc)
+
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     reviewed_at = models.DateTimeField(blank=True, null=True)

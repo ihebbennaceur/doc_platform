@@ -26,6 +26,7 @@ from .serializers import (
     LawyerProfileSerializer,
     BuyerProfileSerializer
 )
+from .pdf_analyzer import pdf_analyzer
 
 logger = logging.getLogger(__name__)
 
@@ -413,3 +414,66 @@ class DocumentExtractionView(UpdateAPIView):
                 {'error': f'Extraction failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def analyze_document_pdf(request, document_id):
+    """
+    Analyze a PDF document using AI (extract text, detect type, extract structured data)
+    POST /api/documents/{document_id}/analyze/
+    """
+    try:
+        document = Document.objects.get(id=document_id, user=request.user)
+        
+        # Check if document is PDF
+        if not document.file.name.lower().endswith('.pdf'):
+            return Response(
+                {'error': 'Only PDF documents can be analyzed'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get file path
+        file_path = document.file.path
+        
+        # Get analysis type from request
+        analysis_type = request.data.get('analysis_type', 'full')
+        
+        result = {}
+        
+        if analysis_type in ['extract', 'full']:
+            # Extract text from PDF
+            result['text_extraction'] = pdf_analyzer.extract_text_from_pdf(file_path)
+        
+        if analysis_type in ['detect', 'full']:
+            # Detect document type
+            type_analysis = pdf_analyzer.detect_document_type(file_path)
+            result['document_type_analysis'] = type_analysis
+        
+        if analysis_type == 'structured':
+            # Extract specific fields
+            fields = request.data.get('fields', ['invoice_number', 'date', 'amount'])
+            result['structured_data'] = pdf_analyzer.extract_structured_data(file_path, fields)
+        
+        # Store results in document
+        document.analysis_result = result
+        document.save()
+        
+        return Response({
+            'document_id': document.id,
+            'analysis_type': analysis_type,
+            'result': result,
+            'status': 'completed'
+        }, status=status.HTTP_200_OK)
+        
+    except Document.DoesNotExist:
+        return Response(
+            {'error': 'Document not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    except Exception as e:
+        logger.error(f"PDF analysis failed: {str(e)}")
+        return Response(
+            {'error': f'Analysis failed: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

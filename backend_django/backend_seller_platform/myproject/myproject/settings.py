@@ -311,3 +311,6 @@ else:
 
 # WhiteNoise Configuration for serving static files in production
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# AI/ML Configuration - OpenRouter API
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', None)
