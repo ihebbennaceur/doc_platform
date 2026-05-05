@@ -4,6 +4,7 @@ from .views import (
     LoginView,
     UserUpdateView,
     UserDetailView,
+    current_user,
     EmailVerificationView,
     AdminUserManagementView,
     AdminUserListView,
@@ -23,8 +24,9 @@ urlpatterns = [
     # Auth endpoints
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
+    path("me/", current_user, name="current_user"),  # Simple GET endpoint for current user
     path("profile/", UserUpdateView.as_view(), name="profile"),
-    path("me/", UserDetailView.as_view(), name="user_detail"),  # New detailed profile endpoint
+    path("user/", UserDetailView.as_view(), name="user_detail"),  # Detailed profile endpoint
     
     # Email verification
     path("verify-email/", EmailVerificationView.as_view(), name="verify_email"),

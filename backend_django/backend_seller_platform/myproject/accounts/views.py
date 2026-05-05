@@ -30,7 +30,13 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 
-class IsAdmin(IsAdminUser):
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def current_user(request):
+    """Get current authenticated user details"""
+    from .serializers import UserDetailSerializer
+    serializer = UserDetailSerializer(request.user)
+    return Response(serializer.data)
     """Custom permission to check if user is admin role"""
     def has_permission(self, request, view):
         return bool(request.user and request.user.role == User.Role.ADMIN)
