@@ -111,6 +111,38 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserDetailSerializer(serializers.ModelSerializer):
+    """Serializer for user profile details with all fields"""
+    full_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "full_name",
+            "phone",
+            "role",
+            "email_verified",
+            "created_at",
+            "updated_at"
+        ]
+        read_only_fields = ["id", "username", "created_at", "updated_at"]
+    
+    def get_full_name(self, obj):
+        """Return full name or N/A if empty"""
+        if obj.first_name and obj.last_name:
+            return f"{obj.first_name} {obj.last_name}"
+        elif obj.first_name:
+            return obj.first_name
+        elif obj.last_name:
+            return obj.last_name
+        return None
+
+
 class AdminUserManagementSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

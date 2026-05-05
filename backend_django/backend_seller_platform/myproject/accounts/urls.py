@@ -3,6 +3,7 @@ from .views import (
     RegisterView,
     LoginView,
     UserUpdateView,
+    UserDetailView,
     EmailVerificationView,
     AdminUserManagementView,
     AdminUserListView,
@@ -23,6 +24,7 @@ urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
     path("profile/", UserUpdateView.as_view(), name="profile"),
+    path("me/", UserDetailView.as_view(), name="user_detail"),  # New detailed profile endpoint
     
     # Email verification
     path("verify-email/", EmailVerificationView.as_view(), name="verify_email"),

@@ -15,6 +15,7 @@ from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     UserUpdateSerializer,
+    UserDetailSerializer,
     AdminUserManagementSerializer,
     EmailVerificationSerializer,
     DocumentSerializer,
@@ -97,6 +98,16 @@ class LoginView(CreateAPIView):
 
 class UserUpdateView(RetrieveUpdateAPIView):
     serializer_class = UserUpdateSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+
+class UserDetailView(RetrieveUpdateAPIView):
+    """Get and update user profile details"""
+    serializer_class = UserDetailSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
